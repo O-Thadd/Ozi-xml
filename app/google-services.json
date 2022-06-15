@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "284413699714",
+    "project_id": "coastal-haven-309701",
+    "storage_bucket": "coastal-haven-309701.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:284413699714:android:18b2e8f2b3a52b962bb69b",
+        "android_client_info": {
+          "package_name": "com.othadd.ozi"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "284413699714-gv8pd82o2isetpcm7sf8nmb4srmfo595.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBSAdM-b6O-gubLpqdrQfVZqi3Ivw0kx5o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "284413699714-gv8pd82o2isetpcm7sf8nmb4srmfo595.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

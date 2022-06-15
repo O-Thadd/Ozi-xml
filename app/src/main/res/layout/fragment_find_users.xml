@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".ui.FindUsersFragment">
+
+    <data>
+
+        <variable
+            name="viewModel"
+            type="com.othadd.ozi.ChatViewModel" />
+
+        <variable
+            name="findUsersFragment"
+            type="com.othadd.ozi.ui.FindUsersFragment" />
+
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="32dp">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/users_recyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:listData="@{viewModel.users}"
+            tools:listitem="@layout/users_list_item" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</layout>

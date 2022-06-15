@@ -1,0 +1,135 @@
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="registerFragment"
+            type="com.othadd.ozi.ui.RegisterFragment" />
+
+    </data>
+
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/signUpDialog_constraintLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="50dp"
+        android:background="@drawable/bg_dialog"
+        android:padding="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="parent">
+
+        <ImageView
+            android:id="@+id/close_imageView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_baseline_close_24"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <EditText
+            android:id="@+id/username_editText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_edittext"
+            android:hint="Username"
+            android:padding="16dp"
+            app:layout_constraintEnd_toStartOf="@id/checkUsername_imageView"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/close_imageView" />
+
+        <ImageView
+            android:id="@+id/checkUsername_imageView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="@{() -> registerFragment.checkUsername()}"
+            android:src="@drawable/ic_check_username"
+            app:layout_constraintBottom_toBottomOf="@id/username_editText"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/username_editText" />
+
+        <TextView
+            android:id="@+id/usernameDescription_textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:text="Simple, easy to remember. This is how others will find you."
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="@id/username_editText"
+            app:layout_constraintTop_toBottomOf="@id/username_editText" />
+
+
+        <LinearLayout
+            android:id="@+id/genderSelectionDialog_linearLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0.0"
+            android:background="@drawable/bg_dialog"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp"
+            app:layout_constraintBottom_toBottomOf="@id/gender_textView"
+            app:layout_constraintStart_toStartOf="@id/gender_textView"
+            app:layout_constraintEnd_toEndOf="@id/gender_textView"
+            app:layout_constraintTop_toTopOf="@id/gender_textView">
+
+            <TextView
+                android:id="@+id/male_textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Male"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/female_textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Female"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+
+        <TextView
+            android:id="@+id/gender_textView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_edittext"
+            android:hint="Gender"
+            android:inputType="none"
+            android:padding="16dp"
+            android:textSize="18sp"
+            app:layout_constraintEnd_toEndOf="@id/username_editText"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/usernameDescription_textView" />
+
+
+        <TextView
+            android:id="@+id/signUp_textView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="36dp"
+            android:background="@drawable/bg_button_3"
+            android:fontFamily="@font/amaranth_bold"
+            android:onClick="@{() -> registerFragment.registerUser()}"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:text="Sign Up"
+            android:textAlignment="center"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/gender_textView" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</layout>
