@@ -1,27 +1,19 @@
 package com.othadd.ozi
 
 import android.app.Application
-import android.os.CountDownTimer
 import androidx.lifecycle.*
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.workDataOf
 import com.othadd.ozi.database.DBChat
 import com.othadd.ozi.database.toUIChat
 import com.othadd.ozi.network.NetworkApi
 import com.othadd.ozi.network.User
-import com.othadd.ozi.utils.WORKER_MESSAGE_KEY
-import com.othadd.ozi.utils.messageToString
-import com.othadd.ozi.workers.SendMessageWorker
+import com.othadd.ozi.utils.showNetworkErrorToast
 import kotlinx.coroutines.launch
-import java.util.*
 
 const val USERNAME_CHECK_UNDONE = 0
 const val USERNAME_CHECK_CHECKING = 1
 const val USERNAME_CHECK_PASSED = 2
 const val USERNAME_CHECK_FAILED = 3
 
-const val DUMMY_NUMBER = 0
 
 class ChatViewModel(
     private val settingsRepo: SettingsRepo,
@@ -37,12 +29,10 @@ class ChatViewModel(
     }
 
     val chat: LiveData<DBChat> = messagingRepo.chat
-    val chatMateUsername get() = chat.value?.chatMateUsername
 
     val messages: LiveData<List<UIMessage>> = Transformations.map(messagingRepo.chat) { dbChat ->
         dbChat.messages.map { it.toUIMessage(userId) }
     }
-
 
     val userIsRegistered = Transformations.map(settingsRepo.username().asLiveData()) {
         it != NO_USERNAME
@@ -64,24 +54,24 @@ class ChatViewModel(
     private var _signUpConditionsMet = MutableLiveData<Boolean>()
     val signUpConditionsMet: LiveData<Boolean> get() = _signUpConditionsMet
 
-    var hasAttemptedRegistration: Boolean = false
-
     private var _showConfirmGameRequestDialog = MutableLiveData<Boolean>()
     val showConfirmGameRequestDialog: LiveData<Boolean> get() = _showConfirmGameRequestDialog
-
-    private var _countdownMessage = MutableLiveData<String>()
-    val countdownMessage: LiveData<String> get() = _countdownMessage
-
-    private var _showCountDownDialog = MutableLiveData<Boolean>()
-    val showCountDownDialog: LiveData<Boolean> get() = _showCountDownDialog
-
-    private var _showCountDownEndedDialog = MutableLiveData<Boolean>()
-    val showCountDownEndedDialog: LiveData<Boolean> get() = _showCountDownEndedDialog
 
 
     fun sendMessage(message: String, senderId: String = userId) {
         viewModelScope.launch {
             messagingRepo.createAndScheduleMessage(senderId, message)
+        }
+    }
+
+    fun refreshMessages(failToastMessage: String){
+        viewModelScope.launch {
+            try{
+                messagingRepo.getMessages(getApplication())
+            }
+            catch (e: Exception){
+                showNetworkErrorToast(getApplication(), failToastMessage)
+            }
         }
     }
 
@@ -114,16 +104,21 @@ class ChatViewModel(
 
     fun checkUsername(username: String) {
         viewModelScope.launch {
-            _usernameCheckStatus.value = USERNAME_CHECK_CHECKING
-            updateSignUpConditionsStatus()
-            val usernameCheckPassed = NetworkApi.retrofitService.checkUsername(username)
-            if (usernameCheckPassed) {
-                _usernameCheckStatus.value = USERNAME_CHECK_PASSED
+            try {
+                _usernameCheckStatus.value = USERNAME_CHECK_CHECKING
                 updateSignUpConditionsStatus()
-            } else {
-                _usernameCheckStatus.value = USERNAME_CHECK_FAILED
+                val usernameCheckPassed = NetworkApi.retrofitService.checkUsername(username)
+                if (usernameCheckPassed) {
+                    _usernameCheckStatus.value = USERNAME_CHECK_PASSED
+                } else {
+                    _usernameCheckStatus.value = USERNAME_CHECK_FAILED
+                }
                 updateSignUpConditionsStatus()
             }
+            catch (e: Exception){
+                showNetworkErrorToast(getApplication())
+            }
+
         }
     }
 
@@ -142,63 +137,37 @@ class ChatViewModel(
 
     fun sendGameRequest() {
         viewModelScope.launch {
+            messagingRepo.sendGameRequest()
             _showConfirmGameRequestDialog.value = false
-            messagingRepo.sendGameRequest(userId)
-            timer.start()
-            _showCountDownDialog.value = true
         }
-    }
-
-    fun countDownEnded() {
-        _showCountDownDialog.value = false
-        _countdownMessage.value = getApplication<OziApplication>().getString(
-            R.string.game_request_no_response,
-            chatMateUsername
-        )
-        _showCountDownEndedDialog.value = true
     }
 
     fun cancelSendGameRequest() {
         _showConfirmGameRequestDialog.value = false
     }
 
-    fun okayAfterCountdownEnded() {
-        _showCountDownEndedDialog.value = false
-    }
-
-    private val timer: CountDownTimer = object : CountDownTimer(10000, 1000) {
-
-        override fun onTick(millisUntilFinished: Long) {
-            val countDownTime = (millisUntilFinished / 1000).toInt()
-            _countdownMessage.value = getApplication<OziApplication>().getString(
-                R.string.game_request_response_countdown,
-                chatMateUsername,
-                countDownTime
-            )
-        }
-
-        override fun onFinish() {
-            countDownEnded()
+    fun respondPositive(){
+        viewModelScope.launch {
+            messagingRepo.givePositiveResponse()
         }
     }
 
-
-    //    dummy liveData. is observed in fragment. just to get when code block to run
-    val dummyLiveData: LiveData<Int> = Transformations.map(messagingRepo.gamingStatus) {
-        when (it) {
-            STATUS_USER_ALREADY_PLAYING -> {
-                _showCountDownDialog.value = false
-            }
+    fun respondNegative(){
+        viewModelScope.launch {
+            messagingRepo.giveNegativeResponse()
         }
-        return@map DUMMY_NUMBER
     }
 
+    fun notifyDialogOkayPressed(){
+        viewModelScope.launch {
+            messagingRepo.notifyDialogOkayPressed()
+        }
+    }
 
     init {
         _usernameCheckStatus.value = USERNAME_CHECK_UNDONE
         _signUpConditionsMet.value = false
         _showConfirmGameRequestDialog.value = false
-
     }
 
 }

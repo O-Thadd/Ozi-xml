@@ -19,7 +19,6 @@ class SettingsRepo(private val context: Context) {
     private val USER_ID_KEY = stringPreferencesKey("userIdKey")
     private val USERNAME_KEY = stringPreferencesKey("usernameKey")
 
-
     fun getUserId(): String {
 
         var userId = TEMP_USER_ID

@@ -14,7 +14,8 @@ data class DBChat(
     @ColumnInfo val chatMateId: String,
     @ColumnInfo val messages: MutableList<Message>,
     @ColumnInfo var chatMateUsername: String,
-    @ColumnInfo var chatMateGender: String
+    @ColumnInfo var chatMateGender: String,
+    @ColumnInfo var dialogState: DialogState
 ) {
     fun addMessages(newMessages: List<Message>) {
         messages.addAll(newMessages)

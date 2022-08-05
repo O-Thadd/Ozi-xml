@@ -20,7 +20,7 @@ class RegisterFragment : Fragment() {
     private val sharedViewModel: ChatViewModel by activityViewModels {
         ChatViewModelFactory(
             SettingsRepo(requireContext()),
-            MessagingRepo((activity?.application as OziApplication)),
+            MessagingRepo.getInstance((activity?.application as OziApplication)),
             activity?.application as OziApplication
         )
     }
@@ -48,7 +48,6 @@ class RegisterFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        sharedViewModel.hasAttemptedRegistration = true
         sharedViewModel.userIsRegistered.observe(viewLifecycleOwner) {
             if (it) {
                 findNavController().navigate(RegisterFragmentDirections.actionRegisterFragmentToChatsFragment())

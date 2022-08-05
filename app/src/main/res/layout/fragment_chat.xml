@@ -27,6 +27,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
+            android:onClick="@{() -> viewModel.notifyDialogOkayPressed()}"
             android:src="@drawable/ic_arrow_back_"
             app:layout_constraintBottom_toBottomOf="@id/fragmentHeader_constrainLayout"
             app:layout_constraintStart_toStartOf="parent"
@@ -38,7 +39,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginEnd="24dp"
-            android:onClick="@{() -> chatFragment.confirmSendGameRequest()}"
+            android:onClick="@{() -> viewModel.confirmSendGameRequest()}"
             android:src="@drawable/ic_game_mode"
             app:layout_constraintBottom_toBottomOf="@id/fragmentHeader_constrainLayout"
             app:layout_constraintEnd_toEndOf="parent"
@@ -168,8 +169,21 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
+        <View
+            android:id="@+id/screen_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:visibility="gone"
+            android:onClick="@{() -> chatFragment.doNothing()}"
+            android:alpha="0.5"
+            android:background="@color/black"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/confirmGameModeDialog_constraintLayout"
+            android:id="@+id/confirmSendGameDialog_constraintLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="40dp"
@@ -180,7 +194,8 @@
             android:paddingBottom="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="parent">
+            app:layout_constraintTop_toBottomOf="parent"
+            >
 
             <TextView
                 android:id="@+id/confirmGameRequest_textView"
@@ -200,7 +215,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/bg_button_3"
-                android:onClick="@{() -> chatFragment.sendGameRequest()}"
+                android:onClick="@{() -> viewModel.sendGameRequest()}"
                 android:padding="16dp"
                 android:text="Yes!"
                 android:textSize="20sp"
@@ -226,54 +241,26 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/gameRequestCountdownDialog_constraintLayout"
+            android:id="@+id/notifyDialog_constraintLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="40dp"
-            android:layout_marginEnd="40dp"
             android:alpha="0.0"
-            android:background="@drawable/bg_dialog"
-            android:paddingTop="16dp"
-            android:paddingBottom="16dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="parent">
-
-            <TextView
-                android:id="@+id/gameRequestCountdown_textView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@{viewModel.countdownMessage}"
-                android:textAlignment="center"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:text="Request has been sent. Thadd has 90s to respond" />
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/countDownEndedDialog_constraintLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="40dp"
             android:layout_marginEnd="40dp"
-            android:alpha="0.0"
             android:background="@drawable/bg_dialog"
             android:padding="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="parent">
+            app:layout_constraintTop_toBottomOf="parent"
+            >
 
             <TextView
                 android:id="@+id/countDownEnded_textView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@{viewModel.countdownMessage}"
-                android:textSize="20sp"
+                android:text="@{viewModel.chat.dialogState.message}"
                 android:textAlignment="center"
+                android:textSize="20sp"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -281,18 +268,78 @@
                 tools:text="Thadd did not respond to your request" />
 
             <TextView
-                android:id="@+id/countDownEndedOkButton_textView"
+                android:id="@+id/notifyDialogOkButton_textView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/bg_button_4"
-                android:onClick="@{() -> chatFragment.okayAfterContDownEnded()}"
+                android:onClick="@{() -> viewModel.notifyDialogOkayPressed()}"
                 android:padding="16dp"
                 android:text="Okay"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="@id/countDownEnded_textView"
                 app:layout_constraintTop_toBottomOf="@id/countDownEnded_textView" />
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/promptDialog_constraintLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="40dp"
+            android:alpha="0.0"
+            android:layout_marginEnd="40dp"
+            android:background="@drawable/bg_dialog"
+            android:padding="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="parent"
+            >
+
+            <TextView
+                android:id="@+id/newGameRequest_textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@{viewModel.chat.dialogState.message}"
+                android:textAlignment="center"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:text="Thadd has challenged you to fastest fingers!" />
+
+            <TextView
+                android:id="@+id/negativeResponseButton_textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_button_4"
+                android:onClick="@{() -> viewModel.respondNegative()}"
+                android:padding="16dp"
+                android:text="@{viewModel.chat.dialogState.negativeButtonText}"
+                tools:text="Decline"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="@id/newGameRequest_textView"
+                app:layout_constraintTop_toBottomOf="@id/newGameRequest_textView" />
+
+            <TextView
+                android:id="@+id/positiveResponseButton_textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_button_3"
+                android:onClick="@{() -> viewModel.respondPositive()}"
+                android:text="@{viewModel.chat.dialogState.positiveButtonText}"
+                android:padding="16dp"
+                tools:text="Accept!"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="@id/newGameRequest_textView"
+                app:layout_constraintTop_toBottomOf="@id/newGameRequest_textView" />
 
 
         </androidx.constraintlayout.widget.ConstraintLayout>

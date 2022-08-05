@@ -4,138 +4,149 @@ import android.app.NotificationManager
 import android.content.Context
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.asLiveData
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.othadd.ozi.database.DBChat
+import com.othadd.ozi.database.DialogState
+import com.othadd.ozi.database.NO_DIALOG_DIALOG_TYPE
 import com.othadd.ozi.network.NetworkApi
 import com.othadd.ozi.network.User
-import com.othadd.ozi.utils.MessagesHolder
 import com.othadd.ozi.utils.WORKER_MESSAGE_KEY
 import com.othadd.ozi.utils.messageToString
 import com.othadd.ozi.utils.sortIntoGroupsByChatMate
 import com.othadd.ozi.workers.SendMessageWorker
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import java.util.*
 
-const val STATUS_NO_UPDATE = "No Update"
-const val STATUS_USER_ALREADY_PLAYING = "User is already playing"
-
 class MessagingRepo(private val application: OziApplication) {
 
+//    private val notificationManager = ContextCompat.getSystemService(
+//        application,
+//        NotificationManager::class.java
+//    ) as NotificationManager
+
     private val chatDao = application.database.chatDao()
+    private val gameManager = GameManager
+
+    private fun getUserId() = SettingsRepo(application).getUserId()
 
     private val _chats = chatDao.getChats().asLiveData()
     val chats: LiveData<List<DBChat>> get() = _chats
 
-    private val blankInitialDBChat = DBChat(0, "", mutableListOf(), "", "")
-    private var _chat = MutableStateFlow(blankInitialDBChat)
+    private val newDialogState = DialogState("", "", "", false, NO_DIALOG_DIALOG_TYPE)
+    private val dummyDialogState = DialogState("", "", "", false, "")
+    private val dummyInitialDBChat = DBChat(0, "", mutableListOf(), "", "", dummyDialogState)
+    private var _chat = MutableStateFlow(dummyInitialDBChat)
     val chat: LiveData<DBChat> get() = _chat.asLiveData()
     private val chatInstance = suspend { _chat.first() }
 
-    private var _gamingStatus = MutableLiveData<String>()
-    val gamingStatus: LiveData<String> get() = _gamingStatus
-
     companion object{
-        private lateinit var INSTANCE: MessagingRepo
+        private var INSTANCE: MessagingRepo? = null
         fun getInstance(application: OziApplication): MessagingRepo{
-            if (INSTANCE == null){
-                MessagingRepo(application)
-            }
-            return INSTANCE
+            return INSTANCE ?: MessagingRepo(application)
         }
     }
 
-    private fun getChat(userId: String): DBChat? {
-        var chat: DBChat?
-        runBlocking {
-            val chatsInDB: List<DBChat> = chatDao.getChats().first()
-            chat = chatsInDB.find { it.chatMateId == userId }
-        }
+    private suspend fun findOrCreateChat(userId: String): Pair<DBChat, Boolean> {
+
+        val chatIsNew: Boolean
+        var chat = getChat(userId)
+        if (chat == null) {
+            val user = NetworkApi.retrofitService.getUser(userId)
+            chat = DBChat(
+                chatMateId = userId,
+                messages = mutableListOf(),
+                chatMateUsername = user.username,
+                chatMateGender = user.gender,
+                dialogState = newDialogState
+            )
+            chatIsNew = true
+        } else chatIsNew = false
+
+        return Pair(chat, chatIsNew)
+    }
+
+    private suspend fun getChat(userId: String): DBChat? {
+        val chat: DBChat?
+        val chatsInDB = chatDao.getChats().first()
+        chat = chatsInDB.find { it.chatMateId == userId }
+
         return chat
     }
 
-    fun getMessages(context: Context) {
-        runBlocking {
-            val newMessages =
-                NetworkApi.retrofitService.getMessages(SettingsRepo(context).getUserId())
-            handleReceivedMessages(newMessages)
+    suspend fun getMessages(context: Context) {
+        val newMessages: List<NWMessage>
+        try {
+            newMessages = NetworkApi.retrofitService.getMessages(SettingsRepo(context).getUserId())
         }
+        catch (e: Exception){
+            throw e
+        }
+        handleReceivedMessages(newMessages)
     }
 
-    private fun sendNewMessagesNotification(
-        newMessagesAndChats: Pair<Int, Int>,
-        appContext: Context
-    ) {
-        if (newMessagesAndChats.first != 0) {
-            val notificationManager = ContextCompat.getSystemService(
-                appContext,
-                NotificationManager::class.java
-            ) as NotificationManager
-            notificationManager.sendNotification(
-                "${newMessagesAndChats.first} new Message(s) in ${newMessagesAndChats.second} chat(s)",
-                appContext
-            )
-        }
-    }
+//    private fun sendNewMessagesNotification(
+//        numberOfNewMessagesAndChats: Pair<Int, Int>,
+//        appContext: Context
+//    ) {
+//        if (numberOfNewMessagesAndChats.first != 0) {
+//            notificationManager.sendNewMessageNotification(
+//                "${numberOfNewMessagesAndChats.first} new Message(s) in ${numberOfNewMessagesAndChats.second} chat(s)",
+//                appContext
+//            )
+//        }
+//    }
 
-    private suspend fun saveMessages(messagesGroupsSortedByChatMate: List<MessagesHolder>) {
-        for (messageGroup in messagesGroupsSortedByChatMate) {
-            var chat = getChat(messageGroup.chatMateId)
-            if (chat == null) {
-                val user = NetworkApi.retrofitService.getUser(messageGroup.chatMateId)
-                chat = DBChat(
-                    chatMateId = messageGroup.chatMateId,
-                    messages = mutableListOf(),
-                    chatMateUsername = user.username,
-                    chatMateGender = user.gender
-                )
-                chat.addMessages(messageGroup.messages)
+    private suspend fun saveMessages(messages: List<NWMessage>): Pair<Int, Int> {
+        val messageGroups = messages.sortIntoGroupsByChatMate()
+
+        for (messageGroup in messageGroups) {
+            val responseOfGetChat = findOrCreateChat(messageGroup.chatMateId)
+            val chat = responseOfGetChat.first
+            chat.addMessages(messageGroup.messages)
+            if (responseOfGetChat.second) {
                 chatDao.insert(chat)
             } else {
-                chat.addMessages(messageGroup.messages)
                 chatDao.update(chat)
             }
+
         }
+        return Pair(messages.size, messageGroups.size)
     }
 
-    private suspend fun saveMessage(message: Message) {
-        val chat = getChat(message.senderId)!!
+    suspend fun saveMessage(message: Message) {
+        val responseOfGetChat = findOrCreateChat(message.senderId)
+        val chat = responseOfGetChat.first
         chat.addMessage(message)
-        chatDao.update(chat)
+        if (responseOfGetChat.second) {
+            chatDao.insert(chat)
+        } else chatDao.update(chat)
     }
 
     private suspend fun handleReceivedMessages(newMessages: List<NWMessage>) {
-        val chatMessages = newMessages.filter { it.type == CHAT_MESSAGE || it.type == FROM_SERVER }
-        val chatMessagesSortedByChatMate = chatMessages.sortIntoGroupsByChatMate()
-        saveMessages(chatMessagesSortedByChatMate)
-        sendNewMessagesNotification(
-            Pair(newMessages.size, chatMessagesSortedByChatMate.size),
-            application
-        )
 
+//        handle regular chat messages
+        val chatMessages = newMessages.filter { it.type == CHAT_MESSAGE_TYPE }
+        saveMessages(chatMessages)
+
+//        handle other types
         newMessages.toMutableList().removeAll(chatMessages)
-
-        for (message in newMessages) {
-            when (message.type) {
-                USER_ALREADY_PLAYING -> {
-                    _gamingStatus.value = STATUS_USER_ALREADY_PLAYING
-                    saveMessage(message.toMessage())
-                }
-            }
+        if (newMessages.isNotEmpty()){
+            gameManager.handleMessage(newMessages, application)
         }
     }
 
-    suspend fun createAndScheduleMessage(senderId: String, message: String) {
+    suspend fun createAndScheduleMessage(senderId: String = getUserId(), message: String) {
         val receiverId = chatInstance.invoke().chatMateId
-
         val newMessage = Message(senderId, receiverId, message, Calendar.getInstance().timeInMillis)
-        val newMessageString = messageToString(newMessage)
+        scheduleMessageForSend(newMessage)
+    }
+
+    private fun scheduleMessageForSend(message: Message) {
+        val newMessageString = messageToString(message)
         val workManager = WorkManager.getInstance(application)
         val workRequest = OneTimeWorkRequestBuilder<SendMessageWorker>()
             .setInputData(workDataOf(WORKER_MESSAGE_KEY to newMessageString))
@@ -155,22 +166,23 @@ class MessagingRepo(private val application: OziApplication) {
         NetworkApi.retrofitService.sendMessage(message.toNWMessage())
     }
 
-    suspend fun getUsername(userId: String) {
-        val userName = NetworkApi.retrofitService.getUser(userId).username
-        val chat = getChat(userId)!!
-        chat.chatMateUsername = userName
-        chatDao.update(chat)
-    }
-
     fun registerUser(settingsRepo: SettingsRepo, username: String, gender: String) {
         runBlocking {
-            NetworkApi.retrofitService.registerUser(settingsRepo.getUserId(), username, gender)
-            settingsRepo.storeUsername(username)
+            try {
+                NetworkApi.retrofitService.registerUser(settingsRepo.getUserId(), username, gender)
+                settingsRepo.storeUsername(username)
+            } catch (e: Exception) {
+                throw e
+            }
         }
     }
 
     suspend fun getUsers(): List<User> {
-        return NetworkApi.retrofitService.getUsers()
+        return try {
+            NetworkApi.retrofitService.getUsers()
+        } catch (e: Exception) {
+            throw e
+        }
     }
 
     suspend fun startChat(user: User?) {
@@ -179,7 +191,8 @@ class MessagingRepo(private val application: OziApplication) {
             chatMateId = user.userId,
             chatMateUsername = user.username,
             messages = mutableListOf(),
-            chatMateGender = user.gender
+            chatMateGender = user.gender,
+            dialogState = newDialogState
         )
         chatDao.insert(chat)
     }
@@ -187,22 +200,55 @@ class MessagingRepo(private val application: OziApplication) {
     suspend fun setChat(chatMateUsername: String) {
         chatDao.getChatByChatmateUsername(chatMateUsername).collect {
             _chat.value = it
+            gameManager.setCurrentChat(it)
         }
     }
 
-    fun getId(chatMateUsername: String): String {
-        return runBlocking {
-            chatDao.getChatByChatmateUsername(chatMateUsername).first().chatMateId
+    suspend fun sendGameRequest() {
+        gameManager.sendGameRequest(application)
+    }
+
+    suspend fun declineGameRequest(
+        senderId: String = getUserId(),
+        messageType: String = GAME_REQUEST_RESPONSE_MESSAGE_TYPE,
+        body: String = GAME_REQUEST_DECLINED_MESSAGE_BODY
+    ) {
+        val message = Message(senderId, chatInstance.invoke().chatMateId, messageType, body)
+
+        try {
+            NetworkApi.retrofitService.sendMessage(message.toNWMessage())
+        } catch (e: Exception) {
+            throw e
         }
     }
 
-    suspend fun sendGameRequest(senderId: String) {
-        val message = Message(senderId, chatInstance.invoke().chatMateId, GAME_REQUEST_MESSAGE)
-        NetworkApi.retrofitService.sendMessage(message.toNWMessage())
+    suspend fun acceptGameRequest(
+        senderId: String = getUserId(),
+        messageType: String = GAME_REQUEST_RESPONSE_MESSAGE_TYPE,
+        body: String = GAME_REQUEST_ACCEPTED_MESSAGE_BODY
+    ) {
+        val message = Message(senderId, chatInstance.invoke().chatMateId, messageType, body)
+
+        try {
+            NetworkApi.retrofitService.sendMessage(message.toNWMessage())
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
+    suspend fun notifyDialogOkayPressed() {
+        gameManager.notifyDialogOkayPressed(application)
+    }
+
+    suspend fun givePositiveResponse() {
+        gameManager.givePositiveResponse(application)
+    }
+
+    suspend fun giveNegativeResponse() {
+        gameManager.giveNegativeResponse(application)
     }
 
     init {
-        _gamingStatus.value = STATUS_NO_UPDATE
         INSTANCE = this
     }
 }

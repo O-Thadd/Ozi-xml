@@ -2,17 +2,22 @@ package com.othadd.ozi.ui
 
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
+import android.app.Activity
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.BounceInterpolator
 import android.view.animation.OvershootInterpolator
+import android.view.inputmethod.InputMethodManager
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.addCallback
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
 import com.othadd.ozi.*
+import com.othadd.ozi.database.NOTIFY_DIALOG_TYPE
+import com.othadd.ozi.database.PROMPT_DIALOG_TYPE
 import com.othadd.ozi.databinding.FragmentChatBinding
 
 class ChatFragment : Fragment() {
@@ -20,7 +25,7 @@ class ChatFragment : Fragment() {
     private val sharedViewModel: ChatViewModel by activityViewModels {
         ChatViewModelFactory(
             SettingsRepo(requireContext()),
-            MessagingRepo((activity?.application as OziApplication)),
+            MessagingRepo.getInstance((activity?.application as OziApplication)),
             activity?.application as OziApplication
         )
     }
@@ -28,8 +33,20 @@ class ChatFragment : Fragment() {
     private lateinit var binding: FragmentChatBinding
     private lateinit var messagesRecyclerAdapter: MessagesRecyclerAdapter
     private lateinit var confirmSendGameRequestDialog: ConstraintLayout
-    private lateinit var countDownTimeDialog: ConstraintLayout
-    private lateinit var countDownEndedDialog: ConstraintLayout
+    private lateinit var promptDialog: ConstraintLayout
+    private lateinit var notifyDialog: ConstraintLayout
+    private lateinit var screenView: View
+    private lateinit var backPressedCallback: OnBackPressedCallback
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // This callback will only be called when MyFragment is at least Started.
+        backPressedCallback = requireActivity().onBackPressedDispatcher.addCallback(this) {
+            doNothing()
+        }
+        backPressedCallback.isEnabled = false
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -39,6 +56,11 @@ class ChatFragment : Fragment() {
         binding = FragmentChatBinding.inflate(inflater, container, false)
 
         return binding.root
+    }
+
+    override fun onResume() {
+        super.onResume()
+        sharedViewModel.refreshMessages("Could not refresh messages")
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -53,21 +75,58 @@ class ChatFragment : Fragment() {
             chatFragment = this@ChatFragment
         }
 
-        confirmSendGameRequestDialog = binding.confirmGameModeDialogConstraintLayout
-        countDownTimeDialog = binding.gameRequestCountdownDialogConstraintLayout
-        countDownEndedDialog = binding.countDownEndedDialogConstraintLayout
+        confirmSendGameRequestDialog = binding.confirmSendGameDialogConstraintLayout
+        promptDialog = binding.promptDialogConstraintLayout
+        notifyDialog = binding.notifyDialogConstraintLayout
+        screenView = binding.screenView
 
         sharedViewModel.messages.observe(viewLifecycleOwner){
             messagesRecyclerAdapter.submitList(it)
         }
 
-//        dummy subscription. done just to get code to run in viewModel
-        sharedViewModel.dummyLiveData.observe(viewLifecycleOwner){ }
-
-
         observeDataForDialog(sharedViewModel.showConfirmGameRequestDialog, confirmSendGameRequestDialog)
-        observeDataForDialog(sharedViewModel.showCountDownDialog, countDownTimeDialog)
-        observeDataForDialog(sharedViewModel.showCountDownEndedDialog, countDownEndedDialog)
+
+        sharedViewModel.chat.observe(viewLifecycleOwner){
+            when(it.dialogState.dialogType){
+
+                NOTIFY_DIALOG_TYPE -> {
+                    if (it.dialogState.showOkayButton){
+                        binding.notifyDialogOkButtonTextView.visibility = View.VISIBLE
+                    }
+                    else{
+                        binding.notifyDialogOkButtonTextView.visibility = View.GONE
+                    }
+                    showDialog(notifyDialog)
+                }
+
+                PROMPT_DIALOG_TYPE -> {
+                    showDialog(promptDialog)
+                }
+
+//                no dialog state
+                else -> {
+                    hideAllDialogs()
+                }
+            }
+        }
+
+    }
+
+    private fun viewIsVisible(view: View?): Boolean {
+//        if (view == null) {
+//            return false
+//        }
+//        if (!view.isShown) {
+//            return false
+//        }
+//        val screenWidth = Resources.getSystem().displayMetrics.widthPixels
+//        val screenHeight = Resources.getSystem().displayMetrics.heightPixels
+//        val actualPosition = Rect()
+//        view.getGlobalVisibleRect(actualPosition)
+//        val screen = Rect(0, 0, screenWidth, screenHeight)
+//        return actualPosition.intersect(screen)
+
+        return view?.alpha != 0.0f
     }
 
     private fun observeDataForDialog(data: LiveData<Boolean>, dialog: View){
@@ -83,9 +142,9 @@ class ChatFragment : Fragment() {
 
     fun sendMessage() {
         if(!binding.newMessageEditText.text.isNullOrBlank()){
-            scrollToRecyclerViewBottom()
             sharedViewModel.sendMessage(binding.newMessageEditText.text.toString())
             binding.newMessageEditText.text?.clear()
+            scrollToRecyclerViewBottom()
         }
     }
 
@@ -93,10 +152,6 @@ class ChatFragment : Fragment() {
         val listSize = binding.messagesRecyclerView.adapter?.itemCount
         if (listSize != null)
             binding.messagesRecyclerView.scrollToPosition(listSize - 1)
-    }
-
-    fun confirmSendGameRequest(){
-        sharedViewModel.confirmSendGameRequest()
     }
 
     fun cancelSendGameRequest(){
@@ -108,10 +163,20 @@ class ChatFragment : Fragment() {
     }
 
     fun okayAfterContDownEnded(){
-        sharedViewModel.okayAfterCountdownEnded()
+//        sharedViewModel.okayAfterCountdownEnded()
     }
 
     private fun showDialog(dialog: View){
+
+        if (viewIsVisible(dialog)){
+            return
+        }
+
+        hideAllDialogs()
+        backPressedCallback.isEnabled = true
+        screenView.visibility = View.VISIBLE
+        hideKeyboard()
+
         val movePropertyValueHolder = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, -1200f)
         val transparencyValueHolder = PropertyValuesHolder.ofFloat(View.ALPHA, 1.0f)
         val animator = ObjectAnimator.ofPropertyValuesHolder(dialog, movePropertyValueHolder, transparencyValueHolder)
@@ -121,10 +186,33 @@ class ChatFragment : Fragment() {
     }
 
     private fun hideDialog(dialog: View){
+
+        if (!viewIsVisible(dialog)){
+            return
+        }
+
+        backPressedCallback.isEnabled = false
+        screenView.visibility = View.GONE
+
         val movePropertyValueHolder = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 1200f)
         val transparencyValueHolder = PropertyValuesHolder.ofFloat(View.ALPHA, 0.0f)
         val animator = ObjectAnimator.ofPropertyValuesHolder(dialog, movePropertyValueHolder, transparencyValueHolder)
         animator.start()
+    }
+
+    private fun hideAllDialogs() {
+        hideDialog(confirmSendGameRequestDialog)
+        hideDialog(promptDialog)
+        hideDialog(notifyDialog)
+    }
+
+    private fun hideKeyboard(){
+        val inputMethodManager = requireContext().getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.hideSoftInputFromWindow(binding.newMessageEditText.windowToken, 0)
+    }
+
+    fun doNothing(){
+        //do nothing
     }
 
 }

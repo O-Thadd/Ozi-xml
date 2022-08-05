@@ -24,7 +24,7 @@ class ChatsFragment : Fragment() {
     private val sharedViewModel: ChatViewModel by activityViewModels {
         ChatViewModelFactory(
             SettingsRepo(requireContext()),
-            MessagingRepo((activity?.application as OziApplication)),
+            MessagingRepo.getInstance((activity?.application as OziApplication)),
             activity?.application as OziApplication
         )
     }
@@ -39,7 +39,7 @@ class ChatsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         binding = FragmentChatsBinding.inflate(inflater, container, false)
-        chatsRecyclerAdapter = ChatsRecyclerAdapter{
+        chatsRecyclerAdapter = ChatsRecyclerAdapter {
             sharedViewModel.setChat(it)
             findNavController().navigate(ChatsFragmentDirections.actionChatsFragmentToChatFragment())
         }
@@ -51,17 +51,22 @@ class ChatsFragment : Fragment() {
             chatsRecyclerView.adapter = chatsRecyclerAdapter
         }
 
-        createChannel(MY_NOTIFICATION_CHANNEL_ID, "Ozi")
+        createChannel(getString(R.string.new_message_notification_channel_id), "New Message", "Notifies you of new Messges")
+        createChannel(GAME_REQUEST_NOTIFICATION_CHANNEL_ID, "Game Request", "Notifies you of Game Requests")
 
         return binding.root
     }
 
+    override fun onResume() {
+        super.onResume()
+        sharedViewModel.refreshMessages("Could not refresh chats")
+    }
 
     fun findUsers() {
         findNavController().navigate(ChatsFragmentDirections.actionChatsFragmentToFindUsersFragment())
     }
 
-    private fun createChannel(channelId: String, channelName: String) {
+    private fun createChannel(channelId: String, channelName: String, description: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationChannel = NotificationChannel(
                 channelId,
@@ -73,7 +78,7 @@ class ChatsFragment : Fragment() {
             notificationChannel.enableLights(true)
             notificationChannel.lightColor = Color.RED
             notificationChannel.enableVibration(true)
-            notificationChannel.description = "New Messages"
+            notificationChannel.description = description
 
             val notificationManager = requireActivity().getSystemService(
                 NotificationManager::class.java

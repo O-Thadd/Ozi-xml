@@ -1,10 +1,14 @@
 package com.othadd.ozi.utils
 
+import android.content.Context
+import android.widget.Toast
 import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.othadd.ozi.Message
+import com.othadd.ozi.MessagingRepo
 import com.othadd.ozi.NWMessage
+import com.othadd.ozi.OziApplication
 import java.lang.reflect.Type
 
 class MessagesHolder(val chatMateId: String){
@@ -45,4 +49,9 @@ fun stringToMessage(jsonString: String): Message {
     val gson = Gson()
     val collectionType: Type = object : TypeToken<Message?>() {}.type
     return gson.fromJson(jsonString, collectionType)
+}
+
+const val defaultNetworkErrorMessage = "Network Error. Please check your internet connection and try again."
+fun showNetworkErrorToast(context: Context, message: String = defaultNetworkErrorMessage){
+    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
 }

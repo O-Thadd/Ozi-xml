@@ -20,4 +20,16 @@ class Converters {
         val collectionType: Type = object : TypeToken<List<Message?>?>() {}.type
         return gson.fromJson(jsonString, collectionType)
     }
+
+    @TypeConverter
+    fun dialogStateToString(dialogState: DialogState): String{
+        val gson = Gson()
+        return gson.toJson(dialogState)
+    }
+
+    @TypeConverter
+    fun stringToDialogState(jsonString: String): DialogState {
+        val gson = Gson()
+        return gson.fromJson(jsonString, DialogState::class.java)
+    }
 }

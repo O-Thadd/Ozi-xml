@@ -13,20 +13,24 @@
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/drawable/bg_dialog.xml" value="0.1395" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/drawable/bg_editText.xml" value="0.2115" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/drawable/bg_edittext.xml" value="0.1395" />
+        <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/drawable/bg_game_moderator_message.xml" value="0.1395" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/drawable/bg_message.xml" value="0.1395" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/drawable/bg_message_received.xml" value="0.1395" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/drawable/bg_message_sent.xml" value="0.1395" />
+        <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/drawable/bg_sever_message.xml" value="0.1395" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/drawable/ic_person_dack.xml" value="0.1395" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/drawable/ic_person_light.xml" value="0.1395" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/font/.xml" value="0.234375" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/font/bigshot_one.xml" value="0.1923899102180419" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/chats_list_item.xml" value="0.33" />
-        <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_chat.xml" value="0.12" />
+        <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_chat.xml" value="0.18" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_chats.xml" value="0.22" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_find_users.xml" value="0.15" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_online_chat.xml" value="0.20416666666666666" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_register.xml" value="0.1" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/message.xml" value="0.20416666666666666" />
+        <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/message_list_item_moderator.xml" value="0.25" />
+        <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/message_list_item_server.xml" value="0.25" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/messages_list_item.xml" value="0.33" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/messages_list_item_received.xml" value="0.5" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/messages_list_item_sent.xml" value="0.25" />

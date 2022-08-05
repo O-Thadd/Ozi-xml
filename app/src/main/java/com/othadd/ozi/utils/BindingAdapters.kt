@@ -18,6 +18,7 @@ fun bindMessagesListData(recyclerView: RecyclerView, messagesList: List<UIMessag
     val adapter = recyclerView.adapter as MessagesRecyclerAdapter
     recyclerView.scrollToPosition(adapter.itemCount - 1)
     adapter.submitList(messagesList)
+    recyclerView.scrollToPosition(adapter.itemCount - 1)
 }
 
 @BindingAdapter("listData")
