@@ -126,6 +126,7 @@ class MessagingRepo(private val application: OziApplication) {
         } else chatDao.update(chat)
     }
 
+
     private suspend fun handleReceivedMessages(newMessages: List<NWMessage>) {
 
 //        handle regular chat messages
