@@ -14,6 +14,7 @@ import androidx.navigation.fragment.findNavController
 import com.othadd.ozi.*
 import com.othadd.ozi.databinding.FragmentRegisterBinding
 import com.othadd.ozi.databinding.RegisterDialogBinding
+import com.othadd.ozi.utils.SettingsRepo
 
 class RegisterFragment : Fragment() {
 

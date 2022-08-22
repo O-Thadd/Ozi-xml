@@ -6,10 +6,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.othadd.ozi.MESSAGE_SENT_BY_ME
-import com.othadd.ozi.MESSAGE_SENT_BY_MODERATOR
-import com.othadd.ozi.MESSAGE_SENT_BY_SERVER
-import com.othadd.ozi.UIMessage
+import com.othadd.ozi.*
 import com.othadd.ozi.databinding.MessageListItemModeratorBinding
 import com.othadd.ozi.databinding.MessageListItemServerBinding
 import com.othadd.ozi.databinding.MessagesListItemReceivedBinding
@@ -69,6 +66,7 @@ class MessagesRecyclerAdapter :
                 binding.apply {
                     messageBodyTextview.text = message.body
                     dateTimeTextview.text = message.dateTime
+                    messageSendStatusImageView.setImageResource(if (message.sent) R.drawable.ic_message_sent else R.drawable.ic_message_sending)
                 }
             }
         }

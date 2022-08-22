@@ -9,6 +9,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.othadd.ozi.*
 import com.othadd.ozi.databinding.FragmentFindUsersBinding
+import com.othadd.ozi.utils.SettingsRepo
 
 class FindUsersFragment : Fragment() {
     private val sharedViewModel: ChatViewModel by activityViewModels {
@@ -29,9 +30,9 @@ class FindUsersFragment : Fragment() {
     ): View? {
         binding = FragmentFindUsersBinding.inflate(inflater, container, false)
         usersRecyclerAdapter = UsersRecyclerAdapter {
-            val username = it
-            sharedViewModel.startChat(username)
-            sharedViewModel.setChat(username)
+            val userId = it
+            sharedViewModel.startChat(userId)
+            sharedViewModel.setChat(userId)
             val action = FindUsersFragmentDirections.actionFindUsersFragmentToChatFragment()
             findNavController().navigate(action)
         }

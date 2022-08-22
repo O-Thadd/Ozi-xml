@@ -1,6 +1,8 @@
-package com.othadd.ozi
+package com.othadd.ozi.gaming
 
 import android.os.CountDownTimer
+import com.othadd.ozi.OziApplication
+import com.othadd.ozi.R
 import com.othadd.ozi.database.DialogState
 import com.othadd.ozi.database.getNotifyDialogType
 import com.othadd.ozi.database.getPromptDialogType

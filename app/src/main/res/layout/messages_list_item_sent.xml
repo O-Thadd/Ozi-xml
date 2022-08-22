@@ -55,17 +55,15 @@
                         app:layout_constraintTop_toBottomOf="@id/messageBody_textview"
                         tools:text="2/6/22 2:30pm" />
 
-                    <TextView
-                        android:id="@+id/sent_textview"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
+                    <ImageView
+                        android:id="@+id/messageSendStatus_imageView"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
                         android:layout_marginEnd="8dp"
-                        android:text="sent."
-                        android:textStyle="italic"
-                        android:textSize="11sp"
+                        android:src="@drawable/ic_message_sending"
                         app:layout_constraintEnd_toStartOf="@id/dateTime_textview"
-                        app:layout_constraintTop_toBottomOf="@id/messageBody_textview" />
+                        app:layout_constraintTop_toTopOf="@id/dateTime_textview"
+                        app:layout_constraintBottom_toBottomOf="@id/dateTime_textview" />
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -76,7 +74,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                app:layout_constraintGuide_percent="0.2" />
+                app:layout_constraintGuide_begin="82dp" />
 
             <androidx.constraintlayout.widget.Guideline
                 android:id="@+id/guidelineForReceived"

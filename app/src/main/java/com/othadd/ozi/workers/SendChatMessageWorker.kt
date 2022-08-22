@@ -9,7 +9,7 @@ import com.othadd.ozi.OziApplication
 import com.othadd.ozi.utils.WORKER_MESSAGE_KEY
 import com.othadd.ozi.utils.stringToMessage
 
-class SendMessageWorker(appContext: Context, workerParams: WorkerParameters) :
+class SendChatMessageWorker(appContext: Context, workerParams: WorkerParameters) :
     CoroutineWorker(appContext, workerParams) {
 
     private val appContext = applicationContext
@@ -22,7 +22,7 @@ class SendMessageWorker(appContext: Context, workerParams: WorkerParameters) :
             Result.success()
         } catch (throwable: Throwable) {
             Log.e("Worker send message", throwable.message.toString())
-            Result.failure()
+            Result.retry()
         }
     }
 }

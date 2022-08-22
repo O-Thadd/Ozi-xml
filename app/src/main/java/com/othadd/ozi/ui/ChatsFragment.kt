@@ -17,6 +17,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.othadd.ozi.*
 import com.othadd.ozi.databinding.FragmentChatsBinding
+import com.othadd.ozi.utils.SettingsRepo
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -41,7 +42,6 @@ class ChatsFragment : Fragment() {
         binding = FragmentChatsBinding.inflate(inflater, container, false)
         chatsRecyclerAdapter = ChatsRecyclerAdapter {
             sharedViewModel.setChat(it)
-            findNavController().navigate(ChatsFragmentDirections.actionChatsFragmentToChatFragment())
         }
 
         binding.apply {
@@ -51,15 +51,40 @@ class ChatsFragment : Fragment() {
             chatsRecyclerView.adapter = chatsRecyclerAdapter
         }
 
-        createChannel(getString(R.string.new_message_notification_channel_id), "New Message", "Notifies you of new Messges")
-        createChannel(GAME_REQUEST_NOTIFICATION_CHANNEL_ID, "Game Request", "Notifies you of Game Requests")
+        createChannel(
+            getString(R.string.new_message_notification_channel_id),
+            "New Message",
+            "Notifies you of new Messges"
+        )
+        createChannel(
+            GAME_REQUEST_NOTIFICATION_CHANNEL_ID,
+            "Game Request",
+            "Notifies you of Game Requests"
+        )
 
         return binding.root
     }
 
     override fun onResume() {
         super.onResume()
-        sharedViewModel.refreshMessages("Could not refresh chats")
+        if (sharedViewModel.chatSetFromActivityIntent.value != true)
+            sharedViewModel.refreshMessages("Could not refresh chats")
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        sharedViewModel.chatSetFromActivityIntent.observe(viewLifecycleOwner) {
+            if (it) {
+                findNavController().navigate(ChatsFragmentDirections.actionChatsFragmentToChatFragment())
+            }
+        }
+
+        sharedViewModel.navigateFromChatsToChatFragment.observe(viewLifecycleOwner){
+            if (it){
+                findNavController().navigate(ChatsFragmentDirections.actionChatsFragmentToChatFragment())
+            }
+        }
     }
 
     fun findUsers() {

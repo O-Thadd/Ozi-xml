@@ -1,4 +1,4 @@
-package com.othadd.ozi
+package com.othadd.ozi.utils
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit

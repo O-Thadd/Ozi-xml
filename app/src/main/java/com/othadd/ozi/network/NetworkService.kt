@@ -2,7 +2,7 @@ package com.othadd.ozi.network
 
 import android.content.Context
 import com.othadd.ozi.NWMessage
-import com.othadd.ozi.SettingsRepo
+import com.othadd.ozi.utils.SettingsRepo
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import retrofit2.Retrofit
@@ -47,8 +47,8 @@ interface NetworkService{
         @Path("gender")gender: String
     )
 
-    @GET("getUsers")
-    suspend fun getUsers(): List<User>
+    @GET("getUsers/{userId}")
+    suspend fun getUsers(@Path("userId")userId: String): List<User>
 
     @GET("checkUsername/{username}")
     suspend fun checkUsername(@Path("username")username: String): Boolean
