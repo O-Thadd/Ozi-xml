@@ -44,7 +44,7 @@ class UsersRecyclerAdapter(private val onItemClick: (String) -> Unit) :
     ) {
         val user = getItem(position)
         holder.bind(user)
-        holder.itemView.setOnClickListener{onItemClick(user.username)}
+        holder.itemView.setOnClickListener{onItemClick(user.userId)}
     }
 
     class UserViewHolder(val binding: UsersListItemBinding): RecyclerView.ViewHolder(binding.root) {

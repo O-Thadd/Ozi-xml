@@ -126,7 +126,6 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:listData="@{viewModel.messages}"
                 tools:listitem="@layout/messages_list_item_sent" />
 
             <androidx.constraintlayout.widget.ConstraintLayout

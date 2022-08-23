@@ -17,7 +17,7 @@ class ChatsRecyclerAdapter(private val onItemClick: (String) -> Unit) :
     companion object {
         private val DiffCallback = object : DiffUtil.ItemCallback<UIChat>() {
             override fun areItemsTheSame(oldItem: UIChat, newItem: UIChat): Boolean {
-                return oldItem.id == newItem.id
+                return oldItem.chatMateId == newItem.chatMateId
             }
 
             override fun areContentsTheSame(oldItem: UIChat, newItem: UIChat): Boolean {
@@ -42,13 +42,13 @@ class ChatsRecyclerAdapter(private val onItemClick: (String) -> Unit) :
     ) {
         val chat = getItem(position)
         holder.bind(chat)
-        holder.itemView.setOnClickListener{onItemClick(chat.chatMate)}
+        holder.itemView.setOnClickListener{onItemClick(chat.chatMateId)}
     }
 
     class ChatViewHolder(val binding: ChatsListItemBinding): RecyclerView.ViewHolder(binding.root) {
         fun bind(chat : UIChat){
             binding.apply {
-                chatMateUsernameTextView.text = chat.chatMate
+                chatMateUsernameTextView.text = chat.chatMateUsername
                 lastMessageTextView.text = chat.lastMessage
                 lastMessageTimeTextView.text = chat.lastMessageDateTime
                 aviImageView.setImageResource(when(chat.chatMateGender){

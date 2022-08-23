@@ -19,8 +19,6 @@ class RegisterFragment : Fragment() {
 
     private val sharedViewModel: ChatViewModel by activityViewModels {
         ChatViewModelFactory(
-            SettingsRepo(requireContext()),
-            MessagingRepo.getInstance((activity?.application as OziApplication)),
             activity?.application as OziApplication
         )
     }

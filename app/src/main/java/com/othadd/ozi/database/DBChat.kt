@@ -36,11 +36,11 @@ fun List<DBChat>.toUIChat(): List<UIChat>{
             calendarObject.timeInMillis = lastMessage.dateTime
             val date = calendarObject.time
 
-            return@map UIChat(dbChat.id, dbChat.chatMateUsername, lastMessage.body, format.format(date), "male", dbChat.chatMateGender)
+            return@map UIChat(dbChat.chatMateId, dbChat.chatMateUsername, lastMessage.body, format.format(date), "male", dbChat.chatMateGender)
         }
 
         else return@map UIChat(
-            dbChat.id,
+            dbChat.chatMateId,
             dbChat.chatMateUsername,
             "",
             "",

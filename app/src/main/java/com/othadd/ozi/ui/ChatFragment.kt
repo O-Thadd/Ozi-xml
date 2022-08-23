@@ -24,8 +24,6 @@ class ChatFragment : Fragment() {
 
     private val sharedViewModel: ChatViewModel by activityViewModels {
         ChatViewModelFactory(
-            SettingsRepo(requireContext()),
-            MessagingRepo.getInstance((activity?.application as OziApplication)),
             activity?.application as OziApplication
         )
     }
@@ -37,6 +35,8 @@ class ChatFragment : Fragment() {
     private lateinit var notifyDialog: ConstraintLayout
     private lateinit var screenView: View
     private lateinit var backPressedCallback: OnBackPressedCallback
+
+    private lateinit var chatMateUserId: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +55,15 @@ class ChatFragment : Fragment() {
     ): View? {
         binding = FragmentChatBinding.inflate(inflater, container, false)
 
+        messagesRecyclerAdapter = MessagesRecyclerAdapter()
+
+        binding.apply {
+            lifecycleOwner = viewLifecycleOwner
+            viewModel = sharedViewModel
+            messagesRecyclerView.adapter = messagesRecyclerAdapter
+            chatFragment = this@ChatFragment
+        }
+
         return binding.root
     }
 
@@ -66,27 +75,21 @@ class ChatFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        messagesRecyclerAdapter = MessagesRecyclerAdapter()
-
-        binding.apply {
-            lifecycleOwner = viewLifecycleOwner
-            viewModel = sharedViewModel
-            messagesRecyclerView.adapter = messagesRecyclerAdapter
-            chatFragment = this@ChatFragment
-        }
-
         confirmSendGameRequestDialog = binding.confirmSendGameDialogConstraintLayout
         promptDialog = binding.promptDialogConstraintLayout
         notifyDialog = binding.notifyDialogConstraintLayout
         screenView = binding.screenView
 
-        sharedViewModel.messages.observe(viewLifecycleOwner){
-            messagesRecyclerAdapter.submitList(it)
+        sharedViewModel.chat.observe(viewLifecycleOwner){ dbChat ->
+            messagesRecyclerAdapter.submitList(dbChat.messages.map { it.toUIMessage(sharedViewModel.thisUserId) })
         }
 
         observeDataForDialog(sharedViewModel.showConfirmGameRequestDialog, confirmSendGameRequestDialog)
 
         sharedViewModel.chat.observe(viewLifecycleOwner){
+
+            chatMateUserId = it.chatMateId
+
             when(it.dialogState.dialogType){
 
                 NOTIFY_DIALOG_TYPE -> {
@@ -142,7 +145,7 @@ class ChatFragment : Fragment() {
 
     fun sendMessage() {
         if(!binding.newMessageEditText.text.isNullOrBlank()){
-            sharedViewModel.sendMessage(binding.newMessageEditText.text.toString())
+            sharedViewModel.sendMessage(binding.newMessageEditText.text.toString(), chatMateUserId)
             binding.newMessageEditText.text?.clear()
             scrollToRecyclerViewBottom()
         }
@@ -155,11 +158,11 @@ class ChatFragment : Fragment() {
     }
 
     fun cancelSendGameRequest(){
-        sharedViewModel.cancelSendGameRequest()
+//        sharedViewModel.cancelSendGameRequest()
     }
 
     fun sendGameRequest(){
-        sharedViewModel.sendGameRequest()
+//        sharedViewModel.sendGameRequest()
     }
 
     fun okayAfterContDownEnded(){

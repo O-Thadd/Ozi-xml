@@ -47,8 +47,8 @@ interface NetworkService{
         @Path("gender")gender: String
     )
 
-    @GET("getUsers")
-    suspend fun getUsers(): List<User>
+    @GET("getUsers/{userId}")
+    suspend fun getUsers(@Path("userId")userId: String): List<User>
 
     @GET("checkUsername/{username}")
     suspend fun checkUsername(@Path("username")username: String): Boolean

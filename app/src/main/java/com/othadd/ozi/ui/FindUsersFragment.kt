@@ -13,8 +13,6 @@ import com.othadd.ozi.databinding.FragmentFindUsersBinding
 class FindUsersFragment : Fragment() {
     private val sharedViewModel: ChatViewModel by activityViewModels {
         ChatViewModelFactory(
-            SettingsRepo(requireContext()),
-            MessagingRepo.getInstance((activity?.application as OziApplication)),
             activity?.application as OziApplication
         )
     }
@@ -29,9 +27,8 @@ class FindUsersFragment : Fragment() {
     ): View? {
         binding = FragmentFindUsersBinding.inflate(inflater, container, false)
         usersRecyclerAdapter = UsersRecyclerAdapter {
-            val username = it
-            sharedViewModel.startChat(username)
-            sharedViewModel.setChat(username)
+            val userId = it
+            sharedViewModel.startChat(userId)
             val action = FindUsersFragmentDirections.actionFindUsersFragmentToChatFragment()
             findNavController().navigate(action)
         }

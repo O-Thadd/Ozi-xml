@@ -178,13 +178,13 @@ class MessagingRepo(private val application: OziApplication) {
         }
     }
 
-    suspend fun getUsers(): List<User> {
-        return try {
-            NetworkApi.retrofitService.getUsers()
-        } catch (e: Exception) {
-            throw e
-        }
-    }
+//    suspend fun getUsers(): List<User> {
+//        return try {
+//            NetworkApi.retrofitService.getUsers()
+//        } catch (e: Exception) {
+//            throw e
+//        }
+//    }
 
     suspend fun startChat(user: User?) {
         user!!

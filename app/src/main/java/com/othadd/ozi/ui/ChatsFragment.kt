@@ -23,8 +23,6 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "se
 class ChatsFragment : Fragment() {
     private val sharedViewModel: ChatViewModel by activityViewModels {
         ChatViewModelFactory(
-            SettingsRepo(requireContext()),
-            MessagingRepo.getInstance((activity?.application as OziApplication)),
             activity?.application as OziApplication
         )
     }
@@ -40,7 +38,7 @@ class ChatsFragment : Fragment() {
     ): View? {
         binding = FragmentChatsBinding.inflate(inflater, container, false)
         chatsRecyclerAdapter = ChatsRecyclerAdapter {
-            sharedViewModel.setChat(it)
+            sharedViewModel.startChat(it)
             findNavController().navigate(ChatsFragmentDirections.actionChatsFragmentToChatFragment())
         }
 
@@ -60,6 +58,14 @@ class ChatsFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         sharedViewModel.refreshMessages("Could not refresh chats")
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        sharedViewModel.chats.observe(viewLifecycleOwner){
+            chatsRecyclerAdapter.submitList(it)
+        }
     }
 
     fun findUsers() {
