@@ -4,6 +4,8 @@ import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.app.Activity
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -69,7 +71,12 @@ class ChatFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        if (sharedViewModel.scrollToBottomOfChat) {
+            scrollToRecyclerViewBottom()
+            sharedViewModel.scrollToBottomOfChat = false
+        }
         sharedViewModel.refreshMessages("Could not refresh messages")
+        sharedViewModel.resetNavigateChatsToChatFragment()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -80,23 +87,32 @@ class ChatFragment : Fragment() {
         notifyDialog = binding.notifyDialogConstraintLayout
         screenView = binding.screenView
 
-        sharedViewModel.chat.observe(viewLifecycleOwner){ dbChat ->
-            messagesRecyclerAdapter.submitList(dbChat.messages.map { it.toUIMessage(sharedViewModel.thisUserId) })
+        sharedViewModel.chat.observe(viewLifecycleOwner) { dbChat ->
+            val messages = dbChat.messages
+            messages.sortedBy { it.dateTime }
+            val uiMessages = messages.map { it.toUIMessage(sharedViewModel.thisUserId) }
+            messagesRecyclerAdapter.submitList(uiMessages)
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                scrollToRecyclerViewBottom()
+            }, 50)
         }
 
-        observeDataForDialog(sharedViewModel.showConfirmGameRequestDialog, confirmSendGameRequestDialog)
+        observeDataForDialog(
+            sharedViewModel.showConfirmGameRequestDialog,
+            confirmSendGameRequestDialog
+        )
 
-        sharedViewModel.chat.observe(viewLifecycleOwner){
+        sharedViewModel.chat.observe(viewLifecycleOwner) {
 
             chatMateUserId = it.chatMateId
 
-            when(it.dialogState.dialogType){
+            when (it.dialogState.dialogType) {
 
                 NOTIFY_DIALOG_TYPE -> {
-                    if (it.dialogState.showOkayButton){
+                    if (it.dialogState.showOkayButton) {
                         binding.notifyDialogOkButtonTextView.visibility = View.VISIBLE
-                    }
-                    else{
+                    } else {
                         binding.notifyDialogOkButtonTextView.visibility = View.GONE
                     }
                     showDialog(notifyDialog)
@@ -132,74 +148,80 @@ class ChatFragment : Fragment() {
         return view?.alpha != 0.0f
     }
 
-    private fun observeDataForDialog(data: LiveData<Boolean>, dialog: View){
-        data.observe(viewLifecycleOwner){
-            if (it){
+    private fun observeDataForDialog(data: LiveData<Boolean>, dialog: View) {
+        data.observe(viewLifecycleOwner) {
+            if (it) {
                 showDialog(dialog)
-            }
-            else{
+            } else {
                 hideDialog(dialog)
             }
         }
     }
 
     fun sendMessage() {
-        if(!binding.newMessageEditText.text.isNullOrBlank()){
+        if (!binding.newMessageEditText.text.isNullOrBlank()) {
             sharedViewModel.sendMessage(binding.newMessageEditText.text.toString(), chatMateUserId)
             binding.newMessageEditText.text?.clear()
-            scrollToRecyclerViewBottom()
         }
     }
 
     private fun scrollToRecyclerViewBottom() {
-        val listSize = binding.messagesRecyclerView.adapter?.itemCount
-        if (listSize != null)
-            binding.messagesRecyclerView.scrollToPosition(listSize - 1)
+        val listSize = binding.messagesRecyclerView.layoutManager?.itemCount
+        if (listSize != null && listSize != 0)
+            binding.messagesRecyclerView.smoothScrollToPosition(listSize - 1)
     }
 
-    fun cancelSendGameRequest(){
-//        sharedViewModel.cancelSendGameRequest()
+    fun cancelSendGameRequest() {
+        sharedViewModel.cancelSendGameRequest()
     }
 
-    fun sendGameRequest(){
+    fun sendGameRequest() {
 //        sharedViewModel.sendGameRequest()
     }
 
-    fun okayAfterContDownEnded(){
+    fun okayAfterContDownEnded() {
 //        sharedViewModel.okayAfterCountdownEnded()
     }
 
-    private fun showDialog(dialog: View){
+    private fun showDialog(dialog: View) {
 
-        if (viewIsVisible(dialog)){
+        if (viewIsVisible(dialog)) {
             return
         }
 
         hideAllDialogs()
-        backPressedCallback.isEnabled = true
-        screenView.visibility = View.VISIBLE
+//        backPressedCallback.isEnabled = true
+//        screenView.visibility = View.VISIBLE
         hideKeyboard()
 
         val movePropertyValueHolder = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, -1200f)
         val transparencyValueHolder = PropertyValuesHolder.ofFloat(View.ALPHA, 1.0f)
-        val animator = ObjectAnimator.ofPropertyValuesHolder(dialog, movePropertyValueHolder, transparencyValueHolder)
+        val animator = ObjectAnimator.ofPropertyValuesHolder(
+            dialog,
+            movePropertyValueHolder,
+            transparencyValueHolder
+        )
         animator.duration = 500
         animator.interpolator = OvershootInterpolator()
         animator.start()
     }
 
-    private fun hideDialog(dialog: View){
+    private fun hideDialog(dialog: View) {
 
-        if (!viewIsVisible(dialog)){
+        if (!viewIsVisible(dialog)) {
             return
         }
 
-        backPressedCallback.isEnabled = false
-        screenView.visibility = View.GONE
+//        backPressedCallback.isEnabled = false
+//        screenView.visibility = View.GONE
 
         val movePropertyValueHolder = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 1200f)
         val transparencyValueHolder = PropertyValuesHolder.ofFloat(View.ALPHA, 0.0f)
-        val animator = ObjectAnimator.ofPropertyValuesHolder(dialog, movePropertyValueHolder, transparencyValueHolder)
+        val animator = ObjectAnimator.ofPropertyValuesHolder(
+            dialog,
+            movePropertyValueHolder,
+            transparencyValueHolder
+        )
         animator.start()
     }
 
@@ -209,12 +231,13 @@ class ChatFragment : Fragment() {
         hideDialog(notifyDialog)
     }
 
-    private fun hideKeyboard(){
-        val inputMethodManager = requireContext().getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+    private fun hideKeyboard() {
+        val inputMethodManager =
+            requireContext().getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
         inputMethodManager.hideSoftInputFromWindow(binding.newMessageEditText.windowToken, 0)
     }
 
-    fun doNothing(){
+    fun doNothing() {
         //do nothing
     }
 

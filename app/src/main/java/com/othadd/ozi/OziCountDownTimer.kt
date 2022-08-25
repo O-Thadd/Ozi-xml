@@ -43,7 +43,7 @@ class OziCountDownTimer(val id: String, val application: OziApplication, val onC
     suspend fun start(type: String) {
         timer?.cancel()
         this.type = type
-        val duration: Long = if (type == TIMER_TO_RECEIVE_RESPONSE) 10000 else 8000
+        val duration: Long = if (type == TIMER_TO_RECEIVE_RESPONSE) 20000 else 18000
 
         timer = object : CountDownTimer(duration, 1000) {
 

@@ -23,13 +23,15 @@ data class DBChat(
     fun addMessage(newMessage: Message){
         messages.add(newMessage)
     }
+
+    fun lastMessage() = this.messages.maxByOrNull { it.dateTime }
 }
 
 fun List<DBChat>.toUIChat(): List<UIChat>{
     return this.map { dbChat ->
 
         if (dbChat.messages.isNotEmpty()){
-            val lastMessage = dbChat.messages.maxByOrNull { it.dateTime }!!
+            val lastMessage = dbChat.lastMessage()!!
 
             val format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
             val calendarObject = Calendar.getInstance()

@@ -39,7 +39,7 @@ class ChatsFragment : Fragment() {
         binding = FragmentChatsBinding.inflate(inflater, container, false)
         chatsRecyclerAdapter = ChatsRecyclerAdapter {
             sharedViewModel.startChat(it)
-            findNavController().navigate(ChatsFragmentDirections.actionChatsFragmentToChatFragment())
+//            findNavController().navigate(ChatsFragmentDirections.actionChatsFragmentToChatFragment())
         }
 
         binding.apply {
@@ -49,7 +49,7 @@ class ChatsFragment : Fragment() {
             chatsRecyclerView.adapter = chatsRecyclerAdapter
         }
 
-        createChannel(getString(R.string.new_message_notification_channel_id), "New Message", "Notifies you of new Messges")
+        createChannel(getString(R.string.new_message_notification_channel_id), "New Message", "Notifies you of new Messages")
         createChannel(GAME_REQUEST_NOTIFICATION_CHANNEL_ID, "Game Request", "Notifies you of Game Requests")
 
         return binding.root
@@ -65,6 +65,12 @@ class ChatsFragment : Fragment() {
 
         sharedViewModel.chats.observe(viewLifecycleOwner){
             chatsRecyclerAdapter.submitList(it)
+        }
+
+        sharedViewModel.navigateToChatFragment.observe(viewLifecycleOwner){
+            if (it){
+                findNavController().navigate(ChatsFragmentDirections.actionChatsFragmentToChatFragment())
+            }
         }
     }
 

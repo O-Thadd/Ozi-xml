@@ -1,8 +1,8 @@
 package com.othadd.ozi
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.*
-import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.database.DBChat
 import com.othadd.ozi.database.getNoDialogDialogType
 import com.othadd.ozi.database.toUIChat
@@ -31,9 +31,9 @@ class ChatViewModel(
 //        it.toUIChat()
 //    }
 
-    private var _chats = MutableLiveData<List<DBChat>>()
-    val chats: LiveData<List<UIChat>> = Transformations.map(_chats) {
-        it.toUIChat()
+//    private var _chats = getChatDao().getChats().asLiveData() as MutableLiveData
+    val chats: LiveData<List<UIChat>> = Transformations.map(getChatDao().getChats().asLiveData()) {listOfDBChats ->
+        listOfDBChats.sortedByDescending { it.lastMessage()?.dateTime }.toUIChat()
     }
 
 //    val chat: LiveData<DBChat> = messagingRepo.chat
@@ -68,6 +68,11 @@ class ChatViewModel(
     private var _showConfirmGameRequestDialog = MutableLiveData<Boolean>()
     val showConfirmGameRequestDialog: LiveData<Boolean> get() = _showConfirmGameRequestDialog
 
+    private var _navigateChatFragment = MutableLiveData<Boolean>()
+    val navigateToChatFragment: LiveData<Boolean> get() = _navigateChatFragment
+
+    var scrollToBottomOfChat = true
+
 
     fun sendMessage(messageBody: String, receiverId: String, senderId: String = thisUserId) {
         viewModelScope.launch {
@@ -80,7 +85,8 @@ class ChatViewModel(
             try {
                 MessagingRepoX.refreshMessages(getApplication())
             } catch (e: Exception) {
-                showNetworkErrorToast(getApplication(), failToastMessage)
+                showNetworkErrorToast(getApplication(), "$failToastMessage $e")
+                Log.e("viewModelRefreshMessages", e.toString())
             }
         }
     }
@@ -97,7 +103,7 @@ class ChatViewModel(
     fun startChat(userId: String) {
         viewModelScope.launch {
             val chats = getChatDao().getChats().first()
-            var chat: DBChat? = null
+            var chat: DBChat?
             chat = chats.find { it.chatMateId == userId }
             if (chat == null){
                 val user = NetworkApi.retrofitService.getUser(userId)
@@ -105,6 +111,8 @@ class ChatViewModel(
                 getChatDao().insert(chat)
             }
             _chat = getChatDao().getChatByChatmateId(userId).asLiveData() as MutableLiveData<DBChat>
+            MessagingRepoX.setChat(chat)
+            _navigateChatFragment.value = true
         }
     }
 
@@ -148,42 +156,43 @@ class ChatViewModel(
     }
 
     fun sendGameRequest() {
-//        viewModelScope.launch {
-//            messagingRepo.sendGameRequest()
-//            _showConfirmGameRequestDialog.value = false
-//        }
+        viewModelScope.launch {
+            MessagingRepoX.sendGameRequest(getApplication())
+            _showConfirmGameRequestDialog.value = false
+        }
     }
 
     fun cancelSendGameRequest() {
-//        _showConfirmGameRequestDialog.value = false
+        _showConfirmGameRequestDialog.value = false
     }
 
     fun respondPositive() {
-//        viewModelScope.launch {
-//            messagingRepo.givePositiveResponse()
-//        }
+        viewModelScope.launch {
+            MessagingRepoX.givePositiveResponse(getApplication())
+        }
     }
 
     fun respondNegative() {
-//        viewModelScope.launch {
-//            messagingRepo.giveNegativeResponse()
-//        }
+        viewModelScope.launch {
+            MessagingRepoX.giveNegativeResponse(getApplication())
+        }
     }
 
     fun notifyDialogOkayPressed() {
-//        viewModelScope.launch {
-//            messagingRepo.notifyDialogOkayPressed()
-//        }
+        viewModelScope.launch {
+            MessagingRepoX.notifyDialogOkayPressed(getApplication())
+        }
+    }
+
+    fun resetNavigateChatsToChatFragment() {
+        _navigateChatFragment.value = false
     }
 
     init {
         _usernameCheckStatus.value = USERNAME_CHECK_UNDONE
         _signUpConditionsMet.value = false
         _showConfirmGameRequestDialog.value = false
-
-        viewModelScope.launch {
-            _chats = getChatDao().getChats().asLiveData() as MutableLiveData
-        }
+        _navigateChatFragment.value = false
     }
 
 }

@@ -29,8 +29,8 @@ class FindUsersFragment : Fragment() {
         usersRecyclerAdapter = UsersRecyclerAdapter {
             val userId = it
             sharedViewModel.startChat(userId)
-            val action = FindUsersFragmentDirections.actionFindUsersFragmentToChatFragment()
-            findNavController().navigate(action)
+//            val action = FindUsersFragmentDirections.actionFindUsersFragmentToChatFragment()
+//            findNavController().navigate(action)
         }
 
         binding.apply {
@@ -41,6 +41,16 @@ class FindUsersFragment : Fragment() {
         }
 
         return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        sharedViewModel.navigateToChatFragment.observe(viewLifecycleOwner){
+            if (it){
+                findNavController().navigate(FindUsersFragmentDirections.actionFindUsersFragmentToChatFragment())
+            }
+        }
     }
 
     override fun onResume() {
