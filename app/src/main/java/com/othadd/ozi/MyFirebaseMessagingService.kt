@@ -20,9 +20,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     override fun onNewToken(token: String) {
-        val scope = CoroutineScope(Job() + Dispatchers.Main)
-        scope.launch {
-            sendFCMToken(this@MyFirebaseMessagingService, token)
-        }
+//        val scope = CoroutineScope(Job() + Dispatchers.Main)
+//        scope.launch {
+//            sendFCMToken(this@MyFirebaseMessagingService, token)
+//        }
     }
 }

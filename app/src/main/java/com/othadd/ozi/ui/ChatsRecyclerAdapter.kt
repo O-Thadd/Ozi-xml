@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.othadd.ozi.R
+import com.othadd.ozi.UIChat
 import com.othadd.ozi.databinding.ChatsListItemBinding
 import com.othadd.ozi.network.FEMALE
 import com.othadd.ozi.network.MALE
@@ -56,7 +57,8 @@ class ChatsRecyclerAdapter(private val onItemClick: (String) -> Unit) :
                     FEMALE -> R.drawable.female_profile_black
                     else -> R.drawable.ic_person_dark
                 })
-                unreadMessageImageView.visibility = if (chat.allMessagesRead) View.GONE else View.VISIBLE
+                unreadMessageIndicatorImageView.visibility = if (chat.hasUnreadMessage) View.VISIBLE else View.GONE
+                verificationStatusIndicatorImageView.visibility = if (chat.verificationStatus) View.VISIBLE else View.GONE
             }
         }
     }

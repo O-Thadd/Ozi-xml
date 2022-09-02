@@ -9,8 +9,8 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:elevation="4dp"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:elevation="4dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -18,8 +18,8 @@
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="0dp"
-                android:padding="8dp"
                 android:layout_height="wrap_content"
+                android:padding="8dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="@id/guidelineForSent"
@@ -57,13 +57,13 @@
 
                     <ImageView
                         android:id="@+id/messageSendStatus_imageView"
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
                         android:layout_marginEnd="8dp"
-                        android:src="@drawable/ic_message_sending"
+                        app:layout_constraintBottom_toBottomOf="@id/dateTime_textview"
                         app:layout_constraintEnd_toStartOf="@id/dateTime_textview"
                         app:layout_constraintTop_toTopOf="@id/dateTime_textview"
-                        app:layout_constraintBottom_toBottomOf="@id/dateTime_textview" />
+                        tools:src="@drawable/ic_message_sending" />
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -74,7 +74,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                app:layout_constraintGuide_begin="82dp" />
+                app:layout_constraintGuide_percent="0.2" />
 
             <androidx.constraintlayout.widget.Guideline
                 android:id="@+id/guidelineForReceived"

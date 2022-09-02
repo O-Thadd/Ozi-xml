@@ -1,63 +1,58 @@
-package com.othadd.ozi.ui
+package com.othadd.ozi
 
 import android.app.Application
+import android.os.CountDownTimer
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import androidx.lifecycle.*
-import com.othadd.ozi.CHAT_MESSAGE_TYPE
-import com.othadd.ozi.Message
-import com.othadd.ozi.MessagingRepo
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import com.google.firebase.messaging.FirebaseMessaging
 import com.othadd.ozi.database.DBChat
+import com.othadd.ozi.database.getNoDialogDialogType
 import com.othadd.ozi.database.toUIChat
 import com.othadd.ozi.network.NetworkApi
 import com.othadd.ozi.network.User
-import com.othadd.ozi.utils.NO_USERNAME
-import com.othadd.ozi.utils.SettingsRepo
-import com.othadd.ozi.utils.showNetworkErrorToast
-import kotlinx.coroutines.Dispatchers
+import com.othadd.ozi.ui.SnackBarState
+import com.othadd.ozi.ui.getNoSnackBarSnackBar
+import com.othadd.ozi.ui.getNotifySnackBar
+import com.othadd.ozi.utils.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-const val USERNAME_CHECK_UNDONE = 0
-const val USERNAME_CHECK_CHECKING = 1
-const val USERNAME_CHECK_PASSED = 2
-const val USERNAME_CHECK_FAILED = 3
+const val DEFAULT = 0
+const val BUSY = 1
+const val PASSED = 2
+const val FAILED = 3
 
 
 class ChatViewModel(
-    private val settingsRepo: SettingsRepo,
-    private val messagingRepo: MessagingRepo,
     application: Application
 ) :
     AndroidViewModel(application) {
 
+    private val settingsRepo = SettingsRepo(getApplication())
     var thisUserId: String = settingsRepo.getUserId()
+    private fun getChatDao() = getApplication<OziApplication>().database.chatDao()
 
-    private var _chatSetFromActivityIntent = MutableLiveData<Boolean>()
-    val chatSetFromActivityIntent: LiveData<Boolean> get() = _chatSetFromActivityIntent
-
-    val chats: LiveData<List<UIChat>> = Transformations.map(messagingRepo.chats) { dbChat ->
-        dbChat.toUIChat().sortedByDescending { it.lastMessageDateTime }
-    }
-
-    private var _chat: LiveData<DBChat> = MutableLiveData()
-    val chat: LiveData<DBChat> get() = _chat
-
-    val sendNewGameRequestWorkerStatus =
-        Transformations.map(messagingRepo.sendNewGameRequestWorkerStatus) {
-            if (it) {
-                viewModelScope.launch { messagingRepo.startTimerToReceiveResponse() }
-            }
+    val chats: LiveData<List<UIChat>> =
+        Transformations.map(getChatDao().getChats().asLiveData()) { listOfDBChats ->
+            listOfDBChats.sortedByDescending { it.lastMessage()?.dateTime }.toUIChat()
         }
 
-//    val messages: LiveData<List<UIMessage>> = Transformations.map(chat) { dbChat ->
-//        dbChat.messages.sortedBy { it.dateTime }.map { it.toUIMessage(thisUserId) }
-//    }
+    private var _chat = MutableLiveData<DBChat>()
+    val chat: LiveData<DBChat> get() = _chat
 
     val userIsRegistered = Transformations.map(settingsRepo.username().asLiveData()) {
         it != NO_USERNAME
     }
 
-    private var _isRegistering = MutableLiveData<Boolean>()
-    val isRegistering: LiveData<Boolean> get() = _isRegistering
+    private var _registrationStatus = MutableLiveData<Int>()
+    val registrationStatus: LiveData<Int> get() = _registrationStatus
+
+    private var _usersFetchStatus = MutableLiveData<Int>()
+    val usersFetchStatus: LiveData<Int> get() = _usersFetchStatus
 
     private var _users = MutableLiveData<List<User>>()
     val users: LiveData<List<User>> get() = _users
@@ -75,102 +70,175 @@ class ChatViewModel(
     private var _showConfirmGameRequestDialog = MutableLiveData<Boolean>()
     val showConfirmGameRequestDialog: LiveData<Boolean> get() = _showConfirmGameRequestDialog
 
-    val allMessagesSent = Transformations.map(messagingRepo.allMessagesSent) { workInfoList ->
+    private var _navigateToChatFragment = MutableLiveData<Boolean>()
+    val navigateToChatFragment: LiveData<Boolean> get() = _navigateToChatFragment
 
-        val value = !workInfoList.any {
-            !it.state.isFinished
+    private var _navigateToChatsFragment = MutableLiveData<Boolean>()
+    val navigateToChatsFragment: LiveData<Boolean> get() = _navigateToChatsFragment
+
+    var scrollToBottomOfChat = true
+
+    var allMessagesSentForChat: LiveData<Boolean> =
+        Transformations
+            .map(
+                WorkManager.getInstance(getApplication()).getWorkInfosByTagLiveData(thisUserId)
+            ) { workInfoList ->
+                workInfoList.all { it.state == WorkInfo.State.SUCCEEDED }
+            }
+
+    var chatStartedByActivity = false
+
+    val snackBarState: LiveData<SnackBarState> =
+        Transformations.map(settingsRepo.snackBarStateFlow().asLiveData()) {
+
+//            snackBarHideAnimationDistanceOffset = if (it.showActionButton) 0f else 35f
+
+//        this checks if the snackBar is a noSnackBar snackBar. done by simply checking if the message is an empty string.
+//        a better implementation would be to include a field that indicates snackBar type in the snackBar class, and then check with that field.
+            if (it.message != "") {
+                snackBarTimer.cancel()
+                snackBarTimer.start()
+            }
+
+            it
         }
-        val finalValue = value && workInfoList.isNotEmpty()
-        finalValue
+
+    private val snackBarTimer = object : CountDownTimer(7000, 1000) {
+        override fun onTick(millisUntilFinished: Long) {}
+        override fun onFinish() {
+            closeSnackBar()
+        }
     }
 
-    private var _navigateFromChatsToChatFragment = MutableLiveData<Boolean>()
-    val navigateFromChatsToChatFragment: LiveData<Boolean> get() = _navigateFromChatsToChatFragment
+//    var snackBarHideAnimationDistanceOffset = 30f
 
-    private fun getChatMateId() = _chat.value?.chatMateId
 
-    fun sendMessage(messageBody: String, senderId: String = thisUserId) {
+    fun sendMessage(messageBody: String, receiverId: String, senderId: String = thisUserId) {
         viewModelScope.launch {
-            val message = Message(thisUserId, _chat.value?.chatMateId!!, CHAT_MESSAGE_TYPE, messageBody)
-            val chat = messagingRepo.chatDao.getChatByChatmateId(_chat.value?.chatMateId!!).first()
-            chat.addMessage(message)
-            messagingRepo.chatDao.update(chat)
-            messagingRepo.sendMessage(senderId, _chat.value!!, messageBody)
+            MessagingRepoX.sendMessage(
+                senderId,
+                receiverId,
+                messageBody,
+                getApplication(),
+                thisUserId
+            )
         }
     }
 
     fun refreshMessages(failToastMessage: String) {
         viewModelScope.launch {
             try {
-                messagingRepo.getMessages(getApplication())
+                MessagingRepoX.refreshMessages(getApplication())
             } catch (e: Exception) {
                 showNetworkErrorToast(getApplication(), failToastMessage)
+                Log.e("viewModelRefreshMessages", e.toString())
             }
         }
     }
 
     fun registerUser(username: String, gender: String) {
-        viewModelScope.launch {
-            _isRegistering.value = true
-            messagingRepo.registerUser(settingsRepo, username, gender)
-            _isRegistering.value = false
+        _registrationStatus.value = BUSY
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                viewModelScope.launch {
+                    if (task.isSuccessful) {
+
+                        // Get new FCM registration token
+                        val token = task.result
+
+                        // do something with token
+                        try {
+                            MessagingRepoX.registerUser(thisUserId, username, gender, token)
+                            _registrationStatus.value = PASSED
+                            settingsRepo.storeUsername(username)
+                        } catch (e: Exception) {
+                            _registrationStatus.value = FAILED
+                            Log.e("registration error", e.toString())
+                            showNetworkErrorToast(getApplication(), "encountered error trying to register")
+                        }
+                    } else {
+                        _registrationStatus.value = FAILED
+                    }
+                }
+            }, 500)
         }
     }
 
-    fun startChat(userId: String?) {
+    fun startChat(userId: String) {
         viewModelScope.launch {
-            val user = _users.value?.find { it.userId == userId }
-            messagingRepo.startChat(user)
+            closeSnackBar()
+
+            val chats = getChatDao().getChats().first()
+            var chat: DBChat?
+            chat = chats.find { it.chatMateId == userId }
+            if (chat == null) {
+                val user = NetworkApi.retrofitService.getUser(userId)
+                chat = DBChat(
+                    chatMateId = userId,
+                    messages = mutableListOf(),
+                    chatMateUsername = user.username,
+                    chatMateGender = user.gender,
+                    dialogState = getNoDialogDialogType(),
+                    hasUnreadMessage = false,
+                    onlineStatus = user.onlineStatus,
+                    verificationStatus = user.verificationStatus
+                )
+                getChatDao().insert(chat)
+            }
+            _chat = getChatDao().getChatByChatmateId(userId).asLiveData() as MutableLiveData<DBChat>
+            MessagingRepoX.setChat(chat)
+
+            _navigateToChatFragment.value = true
         }
-    }
-
-    fun setChat(chatMateUserId: String) {
-        viewModelScope.launch {
-//            messagingRepo.setChatX(chatMateUserId)
-            _chat = messagingRepo.chatDao.getChatByChatmateId(chatMateUserId).asLiveData()
-            messagingRepo.setChatX(chatMateUserId)
-            _navigateFromChatsToChatFragment.value = true
-        }
-
-//        viewModelScope.launch {
-////            messagingRepo.markAllMessagesAsRead()
-//            _navigateFromChatsToChatFragment.value = true
-//        }
-
     }
 
     fun getLatestUsers() {
         viewModelScope.launch {
-            _users.value = messagingRepo.getUsers(thisUserId)
+            try {
+                _usersFetchStatus.value = BUSY
+                val users = NetworkApi.retrofitService.getUsers(thisUserId)
+                _users.value = users
+                _usersFetchStatus.value = PASSED
+            } catch (e: Exception) {
+                _usersFetchStatus.value = FAILED
+                showNetworkErrorToast(getApplication(), "Could not fetch users")
+                _usersFetchStatus.value = DEFAULT
+            }
         }
     }
 
     fun checkUsername(username: String) {
         viewModelScope.launch {
             try {
-                _usernameCheckStatus.value = USERNAME_CHECK_CHECKING
+                _usernameCheckStatus.value = BUSY
                 updateSignUpConditionsStatus()
                 val usernameCheckPassed = NetworkApi.retrofitService.checkUsername(username)
                 if (usernameCheckPassed) {
-                    _usernameCheckStatus.value = USERNAME_CHECK_PASSED
+                    _usernameCheckStatus.value = PASSED
                 } else {
-                    _usernameCheckStatus.value = USERNAME_CHECK_FAILED
+                    _usernameCheckStatus.value = FAILED
+                    showNetworkErrorToast(
+                        getApplication(),
+                        "try a different username.\n '$username' has been taken."
+                    )
                 }
                 updateSignUpConditionsStatus()
             } catch (e: Exception) {
-                showNetworkErrorToast(getApplication())
+                showNetworkErrorToast(getApplication(), "username verification failed!")
+                _usernameCheckStatus.value = DEFAULT
             }
 
         }
     }
 
     fun resetUsernameCheck() {
-        _usernameCheckStatus.value = USERNAME_CHECK_UNDONE
+        _usernameCheckStatus.value = DEFAULT
     }
 
     fun updateSignUpConditionsStatus() {
         _signUpConditionsMet.value =
-            genderHasBeenSelected && usernameCheckStatus.value == USERNAME_CHECK_PASSED
+            genderHasBeenSelected && usernameCheckStatus.value == PASSED
     }
 
     fun confirmSendGameRequest() {
@@ -179,7 +247,7 @@ class ChatViewModel(
 
     fun sendGameRequest() {
         viewModelScope.launch {
-            messagingRepo.sendGameRequest()
+            MessagingRepoX.sendGameRequest(getApplication())
             _showConfirmGameRequestDialog.value = false
         }
     }
@@ -190,70 +258,104 @@ class ChatViewModel(
 
     fun respondPositive() {
         viewModelScope.launch {
-            messagingRepo.givePositiveResponse()
+            MessagingRepoX.givePositiveResponse(getApplication())
         }
     }
 
     fun respondNegative() {
         viewModelScope.launch {
-            messagingRepo.giveNegativeResponse()
+            MessagingRepoX.giveNegativeResponse(getApplication())
         }
     }
 
     fun notifyDialogOkayPressed() {
         viewModelScope.launch {
-            messagingRepo.notifyDialogOkayPressed()
+            MessagingRepoX.notifyDialogOkayPressed(getApplication())
         }
     }
 
-    fun setChatFromActivityIntent(messageSenderId: String) {
+    fun resetNavigateChatsToChatFragment() {
+        _navigateToChatFragment.value = false
+    }
+
+    fun updateNavigateChatsToChatFragment(newValue: Boolean) {
+        _navigateToChatFragment.value = newValue
+    }
+
+    fun markMessagesSent() {
         viewModelScope.launch {
-            messagingRepo.getMessages(getApplication())
-            setChat(messageSenderId)
-            _chatSetFromActivityIntent.value = true
+            try {
+                val chat = getChatDao().getChatByChatmateId(_chat.value?.chatMateId!!).first()
+                chat.markAllMessagesSent()
+                getChatDao().update(chat)
+            } catch (e: NullPointerException) {
+                Log.e("viewModel", "null pointer exception trying to mark all messages sent")
+            }
         }
     }
 
-    fun setValueForChatFromActivityIntent(newValue: Boolean) {
-        _chatSetFromActivityIntent.value = newValue
-    }
-
-    fun markAllMessagesSent() {
+    fun markMessagesRead() {
         viewModelScope.launch {
-            messagingRepo.markAllMessagesAsSent(getChatMateId()!!)
+            try {
+                val chat = getChatDao().getChatByChatmateId(_chat.value?.chatMateId!!).first()
+                chat.markMessagesRead()
+                getChatDao().update(chat)
+            } catch (e: NullPointerException) {
+                Log.e("viewModel", "null pointer exception trying to mark messages read")
+            }
         }
     }
 
-    fun markAllMessagesRead() {
-        viewModelScope.launch {
-            messagingRepo.markAllMessagesAsRead(getChatMateId()!!)
-        }
+    fun startChatFromActivity(senderId: String) {
+        chatStartedByActivity = true
+        startChat(senderId)
     }
 
-    fun updateNavigateFromChatsToChat(newValue: Boolean) {
-        _navigateFromChatsToChatFragment.value = newValue
+    fun resetChatStartedByActivity() {
+        chatStartedByActivity = false
     }
+
+    fun resetSignUpConditionsMet() {
+        _signUpConditionsMet.value = false
+    }
+
+    fun closeSnackBar() {
+        settingsRepo.updateSnackBarState(getNoSnackBarSnackBar())
+    }
+
+    fun goToGameRequestSenderChat() {
+        startChat(MessagingRepoX.getGameRequestSenderId())
+    }
+
+    fun snackBarNavigateToChatFromChatFragment() {
+        _navigateToChatsFragment.value = true
+        startChat(getGameRequestSenderId())
+    }
+
+    fun getGameRequestSenderId(): String {
+        return MessagingRepoX.getGameRequestSenderId()
+    }
+
 
     init {
-        _usernameCheckStatus.value = USERNAME_CHECK_UNDONE
+        _usernameCheckStatus.value = DEFAULT
         _signUpConditionsMet.value = false
         _showConfirmGameRequestDialog.value = false
-        _chatSetFromActivityIntent.value = false
-//        refreshMessages("viewModel could not load messages on initialization")
+        _navigateToChatFragment.value = false
+        _navigateToChatsFragment.value = false
+        _registrationStatus.value = DEFAULT
     }
 
 }
 
 class ChatViewModelFactory(
-    private val settingsRepo: SettingsRepo,
-    private val messagingRepo: MessagingRepo,
     private val application: Application
 ) :
     ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ChatViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ChatViewModel(settingsRepo, messagingRepo, application) as T
+            return ChatViewModel(application) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

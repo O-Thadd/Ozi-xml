@@ -17,5 +17,7 @@
     <color name="button">#DFB169</color>
     <color name="server_message_bg">#fadcfd</color>
     <color name="moderator_message_bg">#d9ccf5</color>
-    <color name="ozi_transparent">#1AFFFFFF</color>
+    <color name="grey">#C8C7C7</color>
+    <color name="ozi_splash_screen_bg_color">#000616</color>
+    <color name="ozi_green">#4BC417</color>
 </resources>

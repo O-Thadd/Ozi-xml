@@ -15,13 +15,13 @@ const val TIMER_TO_RESPOND = "timer to respond"
 const val TICK_COUNTDOWN_STAGE = "tick"
 const val FINISH_COUNTDOWN_STAGE = "finish"
 
-class OziCountDownTimer(val id: String, val application: OziApplication, val onCountDownFinish: (OziCountDownTimer) -> Unit) {
+class OziCountDownTimer(val userId: String, val application: OziApplication, val onCountDownFinish: (OziCountDownTimer, String) -> Unit) {
 
     private var timer: CountDownTimer? = null
     private lateinit var type: String
 
     private val chatDao = application.database.chatDao()
-    private suspend fun getChat() = chatDao.getChatByChatmateId(id).first()
+    private suspend fun getChat() = chatDao.getChatByChatmateId(userId).first()
     private suspend fun getUsername() = getChat().chatMateUsername
 
     private suspend fun getDialog(countDownTime: Int, countDownStage: String): DialogState {
@@ -45,7 +45,7 @@ class OziCountDownTimer(val id: String, val application: OziApplication, val onC
     suspend fun start(type: String) {
         timer?.cancel()
         this.type = type
-        val duration: Long = if (type == TIMER_TO_RECEIVE_RESPONSE) 10000 else 8000
+        val duration: Long = if (type == TIMER_TO_RECEIVE_RESPONSE) 25000 else 20000
 
         timer = object : CountDownTimer(duration, 1000) {
 
@@ -61,7 +61,7 @@ class OziCountDownTimer(val id: String, val application: OziApplication, val onC
                 runBlocking {
                     val dialogState = getDialog(0, FINISH_COUNTDOWN_STAGE)
                     updateDialogState(dialogState)
-                    onCountDownFinish(this@OziCountDownTimer)
+                    onCountDownFinish(this@OziCountDownTimer, userId)
                 }
             }
         }.start()
