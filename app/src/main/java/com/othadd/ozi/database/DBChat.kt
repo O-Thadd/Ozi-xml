@@ -15,16 +15,30 @@ data class DBChat(
     @ColumnInfo val messages: MutableList<Message>,
     @ColumnInfo var chatMateUsername: String,
     @ColumnInfo var chatMateGender: String,
-    @ColumnInfo var dialogState: DialogState
+    @ColumnInfo var dialogState: DialogState,
+    @ColumnInfo var hasUnreadMessage: Boolean,
+    @ColumnInfo var onlineStatus: Boolean,
+    @ColumnInfo var verificationStatus: Boolean
 ) {
     fun addMessages(newMessages: List<Message>) {
         messages.addAll(newMessages)
     }
     fun addMessage(newMessage: Message){
         messages.add(newMessage)
+        hasUnreadMessage = true
     }
 
     fun lastMessage() = this.messages.maxByOrNull { it.dateTime }
+
+    fun markAllMessagesSent(){
+        for (message: Message in messages){
+            message.sent = true
+        }
+    }
+
+    fun markMessagesRead(){
+        hasUnreadMessage = false
+    }
 }
 
 fun List<DBChat>.toUIChat(): List<UIChat>{
@@ -38,7 +52,7 @@ fun List<DBChat>.toUIChat(): List<UIChat>{
             calendarObject.timeInMillis = lastMessage.dateTime
             val date = calendarObject.time
 
-            return@map UIChat(dbChat.chatMateId, dbChat.chatMateUsername, lastMessage.body, format.format(date), "male", dbChat.chatMateGender)
+            return@map UIChat(dbChat.chatMateId, dbChat.chatMateUsername, lastMessage.body, format.format(date), dbChat.chatMateGender, dbChat.hasUnreadMessage, dbChat.onlineStatus, dbChat.verificationStatus)
         }
 
         else return@map UIChat(
@@ -46,8 +60,10 @@ fun List<DBChat>.toUIChat(): List<UIChat>{
             dbChat.chatMateUsername,
             "",
             "",
-            "male",
-            dbChat.chatMateGender
+            dbChat.chatMateGender,
+            false,
+            dbChat.onlineStatus,
+            dbChat.verificationStatus
         )
 
     }

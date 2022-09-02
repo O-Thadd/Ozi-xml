@@ -2,13 +2,12 @@ package com.othadd.ozi.utils
 
 import android.content.Context
 import android.widget.Toast
-import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.othadd.ozi.Message
-import com.othadd.ozi.MessagingRepo
 import com.othadd.ozi.NWMessage
 import com.othadd.ozi.OziApplication
+import com.othadd.ozi.ui.SnackBarState
 import java.lang.reflect.Type
 
 class MessagesHolder(val chatMateId: String){
@@ -51,7 +50,24 @@ fun stringToMessage(jsonString: String): Message {
     return gson.fromJson(jsonString, collectionType)
 }
 
+fun snackBarToString(snackBarState: SnackBarState): String{
+    val gson = Gson()
+    return gson.toJson(snackBarState)
+}
+
+fun stringToSnackBar(snackBarString: String?): SnackBarState?{
+    val gson = Gson()
+    return if (snackBarString != null){
+        gson.fromJson(snackBarString, SnackBarState::class.java)
+    }
+    else{
+        null
+    }
+}
+
 const val defaultNetworkErrorMessage = "Network Error. Please check your internet connection and try again."
 fun showNetworkErrorToast(context: Context, message: String = defaultNetworkErrorMessage){
-    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+    if (OziApplication.inForeGround){
+        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+    }
 }

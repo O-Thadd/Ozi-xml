@@ -1,6 +1,7 @@
 package com.othadd.ozi.ui
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -56,6 +57,8 @@ class ChatsRecyclerAdapter(private val onItemClick: (String) -> Unit) :
                     FEMALE -> R.drawable.female_profile_black
                     else -> R.drawable.ic_person_dark
                 })
+                unreadMessageIndicatorImageView.visibility = if (chat.hasUnreadMessage) View.VISIBLE else View.GONE
+                verificationStatusIndicatorImageView.visibility = if (chat.verificationStatus) View.VISIBLE else View.GONE
             }
         }
     }

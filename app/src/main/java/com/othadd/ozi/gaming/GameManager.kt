@@ -1,9 +1,16 @@
-package com.othadd.ozi
+package com.othadd.ozi.gaming
 
 import android.os.Handler
 import android.util.Log
+import android.widget.Toast
+import com.othadd.ozi.*
 import com.othadd.ozi.database.*
 import com.othadd.ozi.network.NetworkApi
+import com.othadd.ozi.ui.getNotifySnackBar
+import com.othadd.ozi.ui.getPromptSnackBar
+import com.othadd.ozi.utils.SettingsRepo
+import com.othadd.ozi.utils.showNetworkErrorToast
+import com.othadd.ozi.utils.snackBarToString
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
@@ -15,12 +22,14 @@ import kotlinx.coroutines.runBlocking
 //const val STATUS_REQUEST_ACCEPTED = "Game request accepted"
 
 const val RESPOND_TO_GAME_REQUEST_PROMPT_TYPE = "respond to game request"
+const val RANDOM_STRING = "random string"
 
 object GameManager {
 
     private fun getChatDao(application: OziApplication) = application.database.chatDao()
     private var currentChatChat: DBChat? = null
-    private lateinit var currentPromptType: String
+    private var currentPromptType: String = RANDOM_STRING
+    private var gameRequestSenderId: String = ""
 
     private val timers: MutableList<OziCountDownTimer> = mutableListOf()
 
@@ -38,18 +47,29 @@ object GameManager {
 
         Handler().postDelayed({
             runBlocking {
-                NetworkApi.retrofitService.sendMessage(message.toNWMessage())
-                startTimer(receiverId, TIMER_TO_RECEIVE_RESPONSE, application)
+                try {
+                    NetworkApi.retrofitService.sendMessage(message.toNWMessage())
+                    startTimer(receiverId, TIMER_TO_RECEIVE_RESPONSE, application)
+                } catch (e: Exception) {
+                    updateDialogState(receiverId, getNoDialogDialogType(), application)
+                    showNetworkErrorToast(application, "could not send game request")
+                }
             }
         }, 500)
 
     }
 
     private fun findOrCreateTimer(userId: String, application: OziApplication): OziCountDownTimer {
-        return timers.find { it.id == userId } ?: OziCountDownTimer(
+        return timers.find { it.userId == userId } ?: OziCountDownTimer(
             userId,
             application
-        ) { timers.remove(it) }
+        ) { countDownTimer, chatMateId ->
+            timers.remove(countDownTimer)
+            if (currentPromptType == RESPOND_TO_GAME_REQUEST_PROMPT_TYPE){
+                respondToServerDeclineGameRequest(chatMateId, application)
+                currentPromptType = RANDOM_STRING
+            }
+        }
     }
 
     private suspend fun startTimer(userId: String, type: String, application: OziApplication) {
@@ -115,7 +135,10 @@ object GameManager {
                         GAME_REQUEST_ACCEPTED_MESSAGE_BODY -> {
                             stopTimer(message.senderId, application)
                             val dialogState = getNotifyDialogType(
-                                application.getString(R.string.game_request_accepted, getUsername(message.senderId, application)),
+                                application.getString(
+                                    R.string.game_request_accepted,
+                                    getUsername(message.senderId, application)
+                                ),
                                 true
                             )
                             updateDialogState(message.senderId, dialogState, application)
@@ -124,9 +147,15 @@ object GameManager {
                 }
 
                 GAME_REQUEST_MESSAGE_TYPE -> {
-                    MessagingRepo(application).saveMessage(message.toMessage())
-                    currentPromptType = RESPOND_TO_GAME_REQUEST_PROMPT_TYPE
-                    startTimer(message.senderId, TIMER_TO_RESPOND, application)
+//                    MessagingRepo(application).saveMessage(message.toMessage())
+                    val chat = getChatDao(application).getChatByChatmateId(message.senderId).first()
+                    if (!chat.messages.any { it.id == message.id }) {
+                        MessagingRepoX.saveIncomingMessage(application, message.toMessage())
+                        currentPromptType = RESPOND_TO_GAME_REQUEST_PROMPT_TYPE
+                        startTimer(message.senderId, TIMER_TO_RESPOND, application)
+                        gameRequestSenderId = message.senderId
+                        SettingsRepo(application).updateSnackBarState(getPromptSnackBar("${getUsername(message.senderId, application)} has challenged you!", "Go to chat"))
+                    }
                 }
             }
         }
@@ -173,7 +202,12 @@ object GameManager {
             GAME_REQUEST_RESPONSE_MESSAGE_TYPE,
             SERVER_SENDER_TYPE
         )
-        NetworkApi.retrofitService.sendMessage(message.toNWMessage())
+        try {
+            NetworkApi.retrofitService.sendMessage(message.toNWMessage())
+        } catch (e: Exception) {
+            Log.e("game manager", "exception trying to accept game request. $e")
+            showNetworkErrorToast(application, "game manager encountered exception trying to accept game request")
+        }
     }
 
     suspend fun giveNegativeResponse(application: OziApplication) {
@@ -181,17 +215,47 @@ object GameManager {
     }
 
     private suspend fun declineGameRequest(application: OziApplication) {
-        updateDialogState(currentChatChat!!.chatMateId, getNoDialogDialogType(), application)
-        val thisUserId = SettingsRepo(application).getUserId()
-        val chatMateId = currentChatChat!!.chatMateId
-        stopTimer(chatMateId, application)
-        val message = Message(
-            thisUserId,
-            chatMateId,
-            GAME_REQUEST_DECLINED_MESSAGE_BODY,
-            GAME_REQUEST_RESPONSE_MESSAGE_TYPE,
-            SERVER_SENDER_TYPE
-        )
-        NetworkApi.retrofitService.sendMessage(message.toNWMessage())
+            updateDialogState(currentChatChat!!.chatMateId, getNoDialogDialogType(), application)
+            val thisUserId = SettingsRepo(application).getUserId()
+            val chatMateId = currentChatChat!!.chatMateId
+            stopTimer(chatMateId, application)
+            val message = Message(
+                thisUserId,
+                chatMateId,
+                GAME_REQUEST_DECLINED_MESSAGE_BODY,
+                GAME_REQUEST_RESPONSE_MESSAGE_TYPE,
+                SERVER_SENDER_TYPE
+            )
+
+            try {
+                NetworkApi.retrofitService.sendMessage(message.toNWMessage())
+            } catch (e: Exception) {
+                Log.e("game manager", "exception trying to decline game request. $e")
+                showNetworkErrorToast(application, "game manager encountered exception trying to decline game request")
+            }
+    }
+
+    private fun respondToServerDeclineGameRequest(chatMateId: String, application: OziApplication){
+        runBlocking {
+            val thisUserId = SettingsRepo(application).getUserId()
+            val message = Message(
+                thisUserId,
+                chatMateId,
+                GAME_REQUEST_DECLINED_MESSAGE_BODY,
+                GAME_REQUEST_RESPONSE_MESSAGE_TYPE,
+                SERVER_SENDER_TYPE
+            )
+
+            try {
+                NetworkApi.retrofitService.sendMessage(message.toNWMessage())
+            } catch (e: Exception) {
+                Log.e("game manager", "exception trying to decline game request. $e")
+                showNetworkErrorToast(application, "game manager encountered exception trying to decline game request.")
+            }
+        }
+    }
+
+    fun getGameRequestSenderId(): String{
+        return gameRequestSenderId
     }
 }

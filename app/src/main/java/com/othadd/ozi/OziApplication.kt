@@ -5,4 +5,8 @@ import com.othadd.ozi.database.ChatRoomDatabase
 
 class OziApplication : Application(){
     val database: ChatRoomDatabase by lazy { ChatRoomDatabase.getDatabase(this) }
+
+    companion object{
+        var inForeGround = false
+    }
 }

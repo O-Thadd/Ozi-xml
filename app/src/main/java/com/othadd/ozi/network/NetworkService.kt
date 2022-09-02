@@ -2,7 +2,7 @@ package com.othadd.ozi.network
 
 import android.content.Context
 import com.othadd.ozi.NWMessage
-import com.othadd.ozi.SettingsRepo
+import com.othadd.ozi.utils.SettingsRepo
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import retrofit2.Retrofit
@@ -47,11 +47,25 @@ interface NetworkService{
         @Path("gender")gender: String
     )
 
+    @POST("registerNewUserWithToken/{userId}/{username}/{gender}/{token}")
+    suspend fun registerNewUserWithToken(
+        @Path("userId") userId: String,
+        @Path("username") username: String,
+        @Path("gender")gender: String,
+        @Path("token")token: String
+    )
+
     @GET("getUsers/{userId}")
     suspend fun getUsers(@Path("userId")userId: String): List<User>
 
     @GET("checkUsername/{username}")
     suspend fun checkUsername(@Path("username")username: String): Boolean
+
+    @POST("updateStatus/{userId}/{update}")
+    suspend fun updateStatus(
+        @Path("userId") userId: String,
+        @Path("update") update: String
+    )
 }
 
 object NetworkApi{

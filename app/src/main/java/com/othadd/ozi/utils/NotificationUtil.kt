@@ -1,8 +1,9 @@
-package com.othadd.ozi
+package com.othadd.ozi.utils
 
 import android.app.NotificationManager
 import android.content.Context
 import androidx.core.app.NotificationCompat
+import com.othadd.ozi.R
 
 const val NEW_MESSAGE_NOTIFICATION_CHANNEL_ID = "New Message Notification Channel ID"
 const val NEW_MESSAGE_NOTIFICATION_ID = 1
@@ -25,5 +26,9 @@ fun NotificationManager.sendGameRequestNotification(messageBody: String, context
         .setContentText(messageBody)
 
     notify(GAME_REQUEST_NOTIFICATION_ID, builder.build())
+}
+
+fun NotificationManager.cancelAllNotifications(){
+    cancelAll()
 }
 

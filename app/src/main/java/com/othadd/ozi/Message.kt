@@ -8,6 +8,7 @@ import java.util.*
 const val CHAT_MESSAGE_TYPE = "Chat Message"
 const val GAME_REQUEST_MESSAGE_TYPE = "Game Request Message"
 const val GAME_REQUEST_RESPONSE_MESSAGE_TYPE = "Game Request Response Message"
+const val STATUS_UPDATE_MESSAGE_TYPE = "Status Update Message"
 
 const val SERVER_SENDER_TYPE = "Server Sender Type"
 const val CHATMATE_SENDER_TYPE = "ChatMate Sender Type"
@@ -33,6 +34,9 @@ data class Message(
     var id: String = UUID.randomUUID().toString()
     var type: String = CHAT_MESSAGE_TYPE
     var senderType: String = CHATMATE_SENDER_TYPE
+
+//    this field is only relevant for sent messages. completely irrelevant for received messages.
+    var sent: Boolean = false
 
     constructor(senderId: String, receiverId: String, type: String) : this(
         senderId,
@@ -95,7 +99,7 @@ data class Message(
             }
         }
 
-        return UIMessage(id, sender, body, format.format(date))
+        return UIMessage(id, sender, body, format.format(date), sent)
     }
 }
 
@@ -121,4 +125,5 @@ data class NWMessage(
     }
 }
 
-data class UIMessage(val id: String, val sender: String, val body: String, val dateTime: String)
+data class UIMessage(val id: String, val sender: String, val body: String, val dateTime: String, var sent: Boolean){
+}

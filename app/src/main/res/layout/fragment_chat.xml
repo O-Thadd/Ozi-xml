@@ -23,11 +23,11 @@
         android:background="@color/black">
 
         <ImageView
-            android:id="@+id/goBack_imageView"
+            android:id="@+id/chatGoBack_imageView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
-            android:onClick="@{() -> viewModel.notifyDialogOkayPressed()}"
+            android:onClick="@{() -> chatFragment.goBack()}"
             android:src="@drawable/ic_arrow_back_"
             app:layout_constraintBottom_toBottomOf="@id/fragmentHeader_constrainLayout"
             app:layout_constraintStart_toStartOf="parent"
@@ -60,9 +60,7 @@
                 android:id="@+id/profile_imageView"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
-                android:layout_marginEnd="4dp"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/chatMateUsername_textView"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:lightGender="@{viewModel.chat.chatMateGender}"
@@ -72,16 +70,26 @@
                 android:id="@+id/chatMateUsername_textView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
                 android:text="@{viewModel.chat.chatMateUsername}"
                 android:textColor="@color/white"
                 android:textSize="24sp"
+                android:layout_marginStart="8dp"
                 android:textStyle="bold"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintBottom_toTopOf="@id/onlineText_textView"
                 app:layout_constraintStart_toEndOf="@+id/profile_imageView"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:text="O.Thadd" />
+
+            <ImageView
+                android:id="@+id/verificationStatusIndicator_imageView"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_verified"
+                android:layout_marginStart="4dp"
+                app:layout_constraintStart_toEndOf="@id/chatMateUsername_textView"
+                app:layout_constraintTop_toTopOf="@id/chatMateUsername_textView"
+                app:layout_constraintBottom_toBottomOf="@id/chatMateUsername_textView"
+                app:tint="@color/white" />
 
             <TextView
                 android:id="@+id/onlineText_textView"
@@ -90,8 +98,10 @@
                 android:text="online"
                 android:textColor="@color/white"
                 android:textSize="11sp"
+                android:layout_marginBottom="4dp"
+                app:layout_constraintBottom_toBottomOf="@id/profile_imageView"
                 app:layout_constraintStart_toStartOf="@id/chatMateUsername_textView"
-                app:layout_constraintTop_toBottomOf="@id/chatMateUsername_textView" />
+                />
 
 
         </androidx.constraintlayout.widget.ConstraintLayout>
@@ -107,7 +117,35 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toBottomOf="@id/fragmentHeader_constrainLayout">
 
+            <LinearLayout
+                android:id="@+id/emptyState_linearLayout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:orientation="vertical"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <ImageView
+                    android:layout_width="250dp"
+                    android:layout_height="250dp"
+                    android:alpha="0.3"
+                    android:src="@drawable/ozi_icon_no_frame"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="8dp"
+                    android:textSize="14sp"
+                    android:textAlignment="center"
+                    android:text="No messages yet. Send your first message."/>
+
+            </LinearLayout>
+
             <View
+                android:id="@+id/viewHoldingBackgroundImage_view"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:background="@drawable/ozi_chat_background"
@@ -120,56 +158,115 @@
                 android:id="@+id/messages_recyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_marginBottom="4dp"
+                android:layout_marginBottom="60dp"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                app:layout_constraintBottom_toTopOf="@id/bottom_constraintLayout"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
+                tools:itemCount="25"
                 tools:listitem="@layout/messages_list_item_sent" />
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/bottom_constraintLayout"
+            <LinearLayout
+                android:id="@+id/chatFragmentBottomComponents_linearLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_edittext"
-                android:padding="8dp"
+                android:gravity="center"
+                android:orientation="vertical"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent">
 
 
-                <EditText
-                    android:id="@+id/newMessage_EditText"
-                    android:layout_width="0dp"
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/bottom_constraintLayout"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginEnd="4dp"
-                    android:background="@android:color/transparent"
-                    android:hint="type message"
-                    android:inputType="textAutoCorrect|textMultiLine|textCapSentences|textImeMultiLine"
+                    android:background="@drawable/bg_edittext"
+                    android:padding="8dp"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toStartOf="@id/send_button"
+                    app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-                <View
-                    android:id="@+id/send_button"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@drawable/round_icon"
-                    android:onClick="@{() -> chatFragment.sendMessage()}"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent" />
+                    >
 
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
+                    <EditText
+                        android:id="@+id/newMessage_EditText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="4dp"
+                        android:background="@android:color/transparent"
+                        android:hint="type message"
+                        android:inputType="textAutoCorrect|textMultiLine|textCapSentences|textImeMultiLine"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toStartOf="@id/send_button"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <View
+                        android:id="@+id/send_button"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/round_icon"
+                        android:onClick="@{() -> chatFragment.sendMessage()}"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent" />
+
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/snackBar_linearLayout"
+                    android:layout_marginTop="8dp"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="12dp"
+                    android:gravity="center"
+                    android:alpha="0.0"
+                    android:visibility="gone"
+                    android:background="@drawable/bg_snackbar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent">
+
+                    <TextView
+                        android:id="@+id/snackBarMessage_textView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@{viewModel.snackBarState.message}"
+                        android:textSize="16sp"
+                        android:layout_marginEnd="12dp"
+                        tools:text="Mary has challenged you!" />
+
+                    <TextView
+                        android:id="@+id/snackBarActionButton_textView"
+                        android:layout_width="wrap_content"
+                        android:layout_marginEnd="12dp"
+                        android:paddingVertical="8dp"
+                        android:textStyle="bold"
+                        tools:text="Go to chat"
+                        android:onClick="@{() -> chatFragment.snackBarSwitchToGameRequestSenderChat()}"
+                        android:paddingHorizontal="8dp"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_button_3"
+                        android:text="@{viewModel.snackBarState.actionButtonText}"/>
+
+                    <ImageView
+                        android:id="@+id/closeSnackBarButton_imageView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:onClick="@{() -> viewModel.closeSnackBar()}"
+                        android:src="@drawable/ic_baseline_close_24"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
 
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <View
-            android:id="@+id/screen_view"
+            android:id="@+id/dialog_overlay_screen_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:layout_constraintTop_toTopOf="parent"
