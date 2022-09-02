@@ -1,8 +1,6 @@
 package com.othadd.ozi.network
 
-import android.content.Context
 import com.othadd.ozi.NWMessage
-import com.othadd.ozi.utils.SettingsRepo
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import retrofit2.Retrofit
@@ -23,10 +21,6 @@ private val retrofit = Retrofit.Builder()
     .baseUrl(BASE_URL)
     .build()
 
-suspend fun sendFCMToken(context: Context, token: String){
-    NetworkApi.retrofitService.sendFCMToken(SettingsRepo(context).getUserId(), token)
-}
-
 interface NetworkService{
     @GET("getMessages/{userId}")
     suspend fun getMessages(@Path("userId")userId: String): List<NWMessage>
@@ -34,18 +28,8 @@ interface NetworkService{
     @POST("sendMessage")
     suspend fun sendMessage(@Body message: NWMessage)
 
-    @POST("sendFCMToken/{userId}/{FCMToken}")
-    suspend fun sendFCMToken(@Path("userId")userId: String, @Path("FCMToken")FCMToken: String)
-
     @GET("getUser/{userId}")
     suspend fun getUser(@Path("userId")userId: String): User
-
-    @POST("registerUser/{userId}/{username}/{gender}")
-    suspend fun registerUser(
-        @Path("userId") userId: String,
-        @Path("username") username: String,
-        @Path("gender")gender: String
-    )
 
     @POST("registerNewUserWithToken/{userId}/{username}/{gender}/{token}")
     suspend fun registerNewUserWithToken(

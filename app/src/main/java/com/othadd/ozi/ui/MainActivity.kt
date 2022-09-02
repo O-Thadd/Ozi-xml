@@ -6,8 +6,6 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
-import com.othadd.ozi.ChatViewModel
-import com.othadd.ozi.ChatViewModelFactory
 import com.othadd.ozi.OziApplication
 import com.othadd.ozi.R
 import com.othadd.ozi.network.NetworkApi

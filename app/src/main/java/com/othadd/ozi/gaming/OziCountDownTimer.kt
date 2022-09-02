@@ -15,7 +15,11 @@ const val TIMER_TO_RESPOND = "timer to respond"
 const val TICK_COUNTDOWN_STAGE = "tick"
 const val FINISH_COUNTDOWN_STAGE = "finish"
 
-class OziCountDownTimer(val userId: String, val application: OziApplication, val onCountDownFinish: (OziCountDownTimer, String) -> Unit) {
+class OziCountDownTimer(
+    val userId: String,
+    val application: OziApplication,
+    val onCountDownFinish: (OziCountDownTimer, String) -> Unit
+) {
 
     private var timer: CountDownTimer? = null
     private lateinit var type: String
@@ -26,17 +30,37 @@ class OziCountDownTimer(val userId: String, val application: OziApplication, val
 
     private suspend fun getDialog(countDownTime: Int, countDownStage: String): DialogState {
 
-        val dialogState: DialogState = if (type == TIMER_TO_RECEIVE_RESPONSE){
-            if (countDownStage == TICK_COUNTDOWN_STAGE){
-                getNotifyDialogType(application.getString(R.string.game_request_response_countdown, getUsername(), countDownTime), false)
+        val dialogState: DialogState = if (type == TIMER_TO_RECEIVE_RESPONSE) {
+            if (countDownStage == TICK_COUNTDOWN_STAGE) {
+                getNotifyDialogType(
+                    application.getString(
+                        R.string.game_request_response_countdown,
+                        getUsername(),
+                        countDownTime
+                    ), false
+                )
             } else {
-                getNotifyDialogType(application.getString(R.string.game_request_no_response, getUsername()), true)
+                getNotifyDialogType(
+                    application.getString(
+                        R.string.game_request_no_response,
+                        getUsername()
+                    ), true
+                )
             }
-        } else{
-            if (countDownStage == TICK_COUNTDOWN_STAGE){
-                getPromptDialogType(application.getString(R.string.new_game_request_countdown, getUsername(), countDownTime), "Accept!", "Decline")
-            } else{
-                getNotifyDialogType(application.getString(R.string.game_request_auto_declined), true)
+        } else {
+            if (countDownStage == TICK_COUNTDOWN_STAGE) {
+                getPromptDialogType(
+                    application.getString(
+                        R.string.new_game_request_countdown,
+                        getUsername(),
+                        countDownTime
+                    ), "Accept!", "Decline"
+                )
+            } else {
+                getNotifyDialogType(
+                    application.getString(R.string.game_request_auto_declined),
+                    true
+                )
             }
         }
         return dialogState
@@ -65,10 +89,9 @@ class OziCountDownTimer(val userId: String, val application: OziApplication, val
                 }
             }
         }.start()
-//        (timer as CountDownTimer).start()
     }
 
-    fun stop(){
+    fun stop() {
         timer?.cancel()
     }
 
@@ -77,5 +100,4 @@ class OziCountDownTimer(val userId: String, val application: OziApplication, val
         chat.dialogState = dialogState
         chatDao.update(chat)
     }
-
 }

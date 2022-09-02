@@ -11,7 +11,7 @@ const val GAME_REQUEST_RESPONSE_MESSAGE_TYPE = "Game Request Response Message"
 const val STATUS_UPDATE_MESSAGE_TYPE = "Status Update Message"
 
 const val SERVER_SENDER_TYPE = "Server Sender Type"
-const val CHATMATE_SENDER_TYPE = "ChatMate Sender Type"
+const val CHAT_MATE_SENDER_TYPE = "ChatMate Sender Type"
 const val GAME_MODERATOR_SENDER_TYPE = "Game Moderator Sender Type"
 
 const val USER_ALREADY_PLAYING_MESSAGE_BODY = "The user is already playing"
@@ -21,7 +21,7 @@ const val GAME_REQUEST_ACCEPTED_MESSAGE_BODY = "Game request accepted"
 
 
 const val MESSAGE_SENT_BY_ME = "message sent by me"
-const val MESSAGE_SENT_BY_CHATMATE = "message sent by chatmate"
+const val MESSAGE_SENT_BY_CHAT_MATE = "message sent by chatmate"
 const val MESSAGE_SENT_BY_SERVER = "message sent by server"
 const val MESSAGE_SENT_BY_MODERATOR = "message sent by moderator"
 
@@ -33,7 +33,7 @@ data class Message(
 ) {
     var id: String = UUID.randomUUID().toString()
     var type: String = CHAT_MESSAGE_TYPE
-    var senderType: String = CHATMATE_SENDER_TYPE
+    var senderType: String = CHAT_MATE_SENDER_TYPE
 
 //    this field is only relevant for sent messages. completely irrelevant for received messages.
     var sent: Boolean = false
@@ -95,7 +95,7 @@ data class Message(
             }
 
             else -> {
-                MESSAGE_SENT_BY_CHATMATE
+                MESSAGE_SENT_BY_CHAT_MATE
             }
         }
 
@@ -112,7 +112,7 @@ data class NWMessage(
 ) {
 
     lateinit var type: String
-    var senderType = CHATMATE_SENDER_TYPE
+    var senderType = CHAT_MATE_SENDER_TYPE
 
     fun toMessage(): Message {
         val message = Message(senderId, receiverId, body, dateTime)
@@ -125,5 +125,4 @@ data class NWMessage(
     }
 }
 
-data class UIMessage(val id: String, val sender: String, val body: String, val dateTime: String, var sent: Boolean){
-}
+data class UIMessage(val id: String, val sender: String, val body: String, val dateTime: String, var sent: Boolean)

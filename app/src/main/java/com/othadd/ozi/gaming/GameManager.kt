@@ -2,24 +2,17 @@ package com.othadd.ozi.gaming
 
 import android.os.Handler
 import android.util.Log
-import android.widget.Toast
 import com.othadd.ozi.*
-import com.othadd.ozi.database.*
+import com.othadd.ozi.database.DBChat
+import com.othadd.ozi.database.DialogState
+import com.othadd.ozi.database.getNoDialogDialogType
+import com.othadd.ozi.database.getNotifyDialogType
 import com.othadd.ozi.network.NetworkApi
-import com.othadd.ozi.ui.getNotifySnackBar
 import com.othadd.ozi.ui.getPromptSnackBar
 import com.othadd.ozi.utils.SettingsRepo
 import com.othadd.ozi.utils.showNetworkErrorToast
-import com.othadd.ozi.utils.snackBarToString
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-
-//
-//const val STATUS_NO_UPDATE = "No Update"
-//const val STATUS_USER_ALREADY_PLAYING = "User is already playing"
-//const val STATUS_NEW_GAME_REQUEST = "New game request"
-//const val STATUS_REQUEST_DECLINED = "Game request declined"
-//const val STATUS_REQUEST_ACCEPTED = "Game request accepted"
 
 const val RESPOND_TO_GAME_REQUEST_PROMPT_TYPE = "respond to game request"
 const val RANDOM_STRING = "random string"
@@ -89,18 +82,14 @@ object GameManager {
     }
 
     suspend fun handleMessage(messages: List<NWMessage>, application: OziApplication) {
-        Log.e("wahala", "gamemanager handling message")
 
         for (message in messages) {
             when (message.type) {
 
                 GAME_REQUEST_RESPONSE_MESSAGE_TYPE -> {
-                    Log.e("wahala", "gamemanager handling request response")
                     when (message.body) {
                         USER_ALREADY_PLAYING_MESSAGE_BODY -> {
-                            Log.e("wahala", "chatmate already playing")
                             stopTimer(message.senderId, application)
-                            Log.e("wahala", "timer stopped")
                             val dialogState = getNotifyDialogType(
                                 application.getString(
                                     R.string.game_request_response_user_already_playing,
@@ -108,7 +97,6 @@ object GameManager {
                                 ), true
                             )
                             updateDialogState(message.senderId, dialogState, application)
-                            Log.e("wahala", "dialog updated")
                         }
 
                         USER_HAS_PENDING_REQUEST_MESSAGE_BODY -> {
@@ -147,7 +135,6 @@ object GameManager {
                 }
 
                 GAME_REQUEST_MESSAGE_TYPE -> {
-//                    MessagingRepo(application).saveMessage(message.toMessage())
                     val chat = getChatDao(application).getChatByChatmateId(message.senderId).first()
                     if (!chat.messages.any { it.id == message.id }) {
                         MessagingRepoX.saveIncomingMessage(application, message.toMessage())
@@ -231,7 +218,7 @@ object GameManager {
                 NetworkApi.retrofitService.sendMessage(message.toNWMessage())
             } catch (e: Exception) {
                 Log.e("game manager", "exception trying to decline game request. $e")
-                showNetworkErrorToast(application, "game manager encountered exception trying to decline game request")
+                showNetworkErrorToast(application, "Error tyring to decline game request")
             }
     }
 
@@ -250,7 +237,7 @@ object GameManager {
                 NetworkApi.retrofitService.sendMessage(message.toNWMessage())
             } catch (e: Exception) {
                 Log.e("game manager", "exception trying to decline game request. $e")
-                showNetworkErrorToast(application, "game manager encountered exception trying to decline game request.")
+                showNetworkErrorToast(application, "Error trying to decline game request")
             }
         }
     }

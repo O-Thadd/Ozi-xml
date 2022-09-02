@@ -1,4 +1,4 @@
-package com.othadd.ozi
+package com.othadd.ozi.ui
 
 import android.app.Application
 import android.os.CountDownTimer
@@ -9,14 +9,13 @@ import androidx.lifecycle.*
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.google.firebase.messaging.FirebaseMessaging
+import com.othadd.ozi.MessagingRepoX
+import com.othadd.ozi.OziApplication
 import com.othadd.ozi.database.DBChat
 import com.othadd.ozi.database.getNoDialogDialogType
 import com.othadd.ozi.database.toUIChat
 import com.othadd.ozi.network.NetworkApi
 import com.othadd.ozi.network.User
-import com.othadd.ozi.ui.SnackBarState
-import com.othadd.ozi.ui.getNoSnackBarSnackBar
-import com.othadd.ozi.ui.getNotifySnackBar
 import com.othadd.ozi.utils.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch

@@ -9,7 +9,7 @@
 
         <variable
             name="viewModel"
-            type="com.othadd.ozi.ChatViewModel" />
+            type="com.othadd.ozi.ui.ChatViewModel" />
 
         <variable
             name="developerFragment"

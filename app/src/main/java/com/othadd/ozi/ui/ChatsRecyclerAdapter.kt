@@ -7,7 +7,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.othadd.ozi.R
-import com.othadd.ozi.UIChat
 import com.othadd.ozi.databinding.ChatsListItemBinding
 import com.othadd.ozi.network.FEMALE
 import com.othadd.ozi.network.MALE

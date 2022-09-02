@@ -15,13 +15,12 @@ import java.util.*
 const val TEMP_USER_ID = "temporary user ID"
 const val NO_USER_ID = "no user ID set"
 const val NO_USERNAME = "no username"
-const val NO_SNACK_BAR = "no snackBar"
 
 class SettingsRepo(private val context: Context) {
 
-    private val USER_ID_KEY = stringPreferencesKey("userIdKey")
-    private val USERNAME_KEY = stringPreferencesKey("usernameKey")
-    private val SNACKBAR_KEY = stringPreferencesKey("snackBarKey")
+    private val userIdKey = stringPreferencesKey("userIdKey")
+    private val usernameKey = stringPreferencesKey("usernameKey")
+    private val snackBarKey = stringPreferencesKey("snackBarKey")
 
     fun getUserId(): String {
 
@@ -29,13 +28,13 @@ class SettingsRepo(private val context: Context) {
 
         runBlocking {
             userId = context.dataStore.data.map {
-                it[USER_ID_KEY] ?: NO_USER_ID
+                it[userIdKey] ?: NO_USER_ID
             }.first()
 
             if (userId == NO_USER_ID) {
                 val newUserId = UUID.randomUUID().toString()
                 context.dataStore.edit {
-                    it[USER_ID_KEY] = newUserId
+                    it[userIdKey] = newUserId
                 }
                 userId = newUserId
             }
@@ -45,14 +44,14 @@ class SettingsRepo(private val context: Context) {
 
     fun username(): Flow<String> {
             return context.dataStore.data.map {
-                it[USERNAME_KEY] ?: NO_USERNAME
+                it[usernameKey] ?: NO_USERNAME
             }
     }
 
     fun storeUsername(username: String) {
         runBlocking {
             context.dataStore.edit {
-                it[USERNAME_KEY] = username
+                it[usernameKey] = username
             }
         }
     }
@@ -61,14 +60,14 @@ class SettingsRepo(private val context: Context) {
         runBlocking {
             val snackBarString = snackBarToString(snackBarState)
             context.dataStore.edit {
-                it[SNACKBAR_KEY] = snackBarString
+                it[snackBarKey] = snackBarString
             }
         }
     }
 
     fun snackBarStateFlow(): Flow<SnackBarState> {
         return context.dataStore.data.map {
-            stringToSnackBar(it[SNACKBAR_KEY]) ?: getNoSnackBarSnackBar()
+            stringToSnackBar(it[snackBarKey]) ?: getNoSnackBarSnackBar()
         }
     }
 

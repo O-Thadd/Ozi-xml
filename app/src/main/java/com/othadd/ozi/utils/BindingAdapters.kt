@@ -4,26 +4,12 @@ import android.widget.ImageView
 import androidx.databinding.BindingAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.othadd.ozi.R
-import com.othadd.ozi.ui.UIChat
-import com.othadd.ozi.UIMessage
 import com.othadd.ozi.network.FEMALE
 import com.othadd.ozi.network.MALE
 import com.othadd.ozi.network.User
 import com.othadd.ozi.ui.ChatsRecyclerAdapter
-import com.othadd.ozi.ui.MessagesRecyclerAdapter
+import com.othadd.ozi.ui.UIChat
 import com.othadd.ozi.ui.UsersRecyclerAdapter
-
-@BindingAdapter("listData")
-fun bindMessagesListData(recyclerView: RecyclerView, messagesList: List<UIMessage>?) {
-    val adapter = recyclerView.adapter as MessagesRecyclerAdapter
-    val size = recyclerView.layoutManager?.itemCount
-
-    if (size != 0 && size != null) {
-        recyclerView.scrollToPosition(size - 1)
-    }
-
-    adapter.submitList(messagesList)
-}
 
 @BindingAdapter("listData")
 fun bindChatsListData(recyclerView: RecyclerView, chatsList: List<UIChat>?) {

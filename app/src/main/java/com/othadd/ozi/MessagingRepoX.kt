@@ -15,8 +15,6 @@ import com.othadd.ozi.workers.SendChatMessageWorker
 import kotlinx.coroutines.flow.first
 import java.util.*
 
-const val SEND_CHAT_MESSAGE_WORKER_TAG = "send chat message worker tag"
-
 object MessagingRepoX {
 
     suspend fun sendMessage(
@@ -84,7 +82,6 @@ object MessagingRepoX {
         chatMateId: String
     ) {
         val chatDao = application.database.chatDao()
-//        val chat = chatDao.getChatByChatmateId(chatMateId).first()
         val resultOfFindChat = findOrCreateChat(chatMateId, chatDao)
         val chat = resultOfFindChat.first
         val chatIsNew = resultOfFindChat.second
@@ -129,12 +126,13 @@ object MessagingRepoX {
             saveIncomingMessage(application, message.toMessage())
         }
 
+//        handle status update messages
         val statusUpdateMessages = newMessages.filter { it.type == STATUS_UPDATE_MESSAGE_TYPE }
         for (message in statusUpdateMessages){
             handleStatusUpdateMessage(message, application.database.chatDao())
         }
 
-//        handle other types
+//        handle other types (currently, gaming messages)
         val gamingMessages = newMessages.toMutableList()
         gamingMessages.removeAll(chatMessages)
         gamingMessages.removeAll(statusUpdateMessages)

@@ -117,8 +117,10 @@ class ChatFragment : Fragment() {
             val uiMessages = messages.map { it.toUIMessage(sharedViewModel.thisUserId) }
             messagesRecyclerAdapter.submitList(uiMessages)
 
-            binding.verificationStatusIndicatorImageView.visibility = if (dbChat.verificationStatus) View.VISIBLE else View.GONE
-            binding.onlineTextTextView.visibility = if (dbChat.onlineStatus) View.VISIBLE else View.GONE
+            binding.verificationStatusIndicatorImageView.visibility =
+                if (dbChat.verificationStatus) View.VISIBLE else View.GONE
+            binding.onlineTextTextView.visibility =
+                if (dbChat.onlineStatus) View.VISIBLE else View.GONE
 
             if (dbChat.messages.isEmpty()) {
                 messagesRecyclerView.visibility = View.GONE
@@ -200,8 +202,8 @@ class ChatFragment : Fragment() {
             }
         }
 
-        sharedViewModel.navigateToChatsFragment.observe(viewLifecycleOwner){
-            if (it && chatSwitchBySnackBar){
+        sharedViewModel.navigateToChatsFragment.observe(viewLifecycleOwner) {
+            if (it && chatSwitchBySnackBar) {
                 chatSwitchBySnackBar = false
                 findNavController().popBackStack()
             }
@@ -212,7 +214,8 @@ class ChatFragment : Fragment() {
         if (snackBarIsShowing) {
             hideSnackBar()
         }
-        val moveBottomComponentsUpAnimator = ObjectAnimator.ofFloat(bottomComponents, View.TRANSLATION_Y, -30f)
+        val moveBottomComponentsUpAnimator =
+            ObjectAnimator.ofFloat(bottomComponents, View.TRANSLATION_Y, -30f)
         val showSnackBarAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 0.0f, 1.0f)
 
         val generalAnimatorSet = AnimatorSet()
@@ -227,7 +230,8 @@ class ChatFragment : Fragment() {
             return
         }
 
-        val moveBottomComponentsDownAnimator = ObjectAnimator.ofFloat(bottomComponents, View.TRANSLATION_Y, 180f)
+        val moveBottomComponentsDownAnimator =
+            ObjectAnimator.ofFloat(bottomComponents, View.TRANSLATION_Y, 180f)
         val hideSnackBarAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 1.0f, 0.0f)
 
         val generalAnimatorSet = AnimatorSet()
@@ -279,14 +283,6 @@ class ChatFragment : Fragment() {
 
     fun cancelSendGameRequest() {
         sharedViewModel.cancelSendGameRequest()
-    }
-
-    fun sendGameRequest() {
-//        sharedViewModel.sendGameRequest()
-    }
-
-    fun okayAfterContDownEnded() {
-//        sharedViewModel.okayAfterCountdownEnded()
     }
 
     private fun showDialog(dialog: View) {
@@ -351,13 +347,8 @@ class ChatFragment : Fragment() {
         //do nothing
     }
 
-    fun snackBarSwitchToGameRequestSenderChat(){
+    fun snackBarSwitchToGameRequestSenderChat() {
         chatSwitchBySnackBar = true
         sharedViewModel.snackBarNavigateToChatFromChatFragment()
     }
-
-//    private fun getHideAnimationDistance(): Float{
-//        return 170f - sharedViewModel.snackBarHideAnimationDistanceOffset
-//    }
-
 }

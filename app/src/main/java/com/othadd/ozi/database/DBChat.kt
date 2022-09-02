@@ -4,7 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.othadd.ozi.Message
-import com.othadd.ozi.UIChat
+import com.othadd.ozi.ui.UIChat
 import java.text.DateFormat
 import java.util.*
 

@@ -110,7 +110,6 @@ class FindUsersFragment : Fragment() {
                 }
             }
         }
-
     }
 
     private fun showSnackBar() {
@@ -172,5 +171,4 @@ class FindUsersFragment : Fragment() {
         super.onResume()
         sharedViewModel.getLatestUsers()
     }
-
 }
