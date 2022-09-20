@@ -77,7 +77,7 @@
         -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@drawable/round_icon" />
+            android:resource="@drawable/ozi_icon_black_thick" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="@string/new_message_notification_channel_id" />

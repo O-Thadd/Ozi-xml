@@ -8,6 +8,14 @@ plugins {
 apply plugin: 'com.google.gms.google-services'
 
 android {
+    signingConfigs {
+        release {
+            storeFile file('C:\\Users\\thadd\\Desktop\\Folders\\Coding\\Credentials\\OThaddKeyStore.jks')
+            storePassword 'anigbogu'
+            keyAlias 'othadd key'
+            keyPassword 'anigbogu'
+        }
+    }
     compileSdk 31
 
     defaultConfig {

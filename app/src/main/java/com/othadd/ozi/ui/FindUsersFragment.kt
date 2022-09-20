@@ -2,6 +2,7 @@ package com.othadd.ozi.ui
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.media.Image
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -10,6 +11,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
@@ -34,8 +36,10 @@ class FindUsersFragment : Fragment() {
     private lateinit var snackBar: LinearLayout
     private lateinit var snackBarActionButton: TextView
     private lateinit var snackBarCloseButton: ImageView
+    private lateinit var searchLoadingIcon: ImageView
 
     private lateinit var animator: ObjectAnimator
+    private lateinit var searchAnimator: ObjectAnimator
     private var snackBarIsShowing = false
 
     override fun onCreateView(
@@ -66,14 +70,19 @@ class FindUsersFragment : Fragment() {
         loadingIcon = binding.loadingIconImageView
         usersRecyclerView = binding.usersRecyclerView
         couldNotFetchTextView = binding.couldNotFetchUsersTextView
-        tryAgainTextViewButton = binding.tryAgainTextView
+        tryAgainTextViewButton = binding.tryAgainButtonTextView
         snackBar = binding.snackBarLinearLayout
         snackBarActionButton = binding.snackBarActionButtonTextView
         snackBarCloseButton = binding.closeSnackBarButtonImageView
+        searchLoadingIcon = binding.searchLoadingIconImageView
 
         animator = ObjectAnimator.ofFloat(loadingIcon, View.ROTATION, -360f, 0f)
         animator.repeatCount = ObjectAnimator.INFINITE
         animator.duration = 300
+
+        searchAnimator = ObjectAnimator.ofFloat(searchLoadingIcon, View.ROTATION, -360f, 0f)
+        searchAnimator.repeatCount = ObjectAnimator.INFINITE
+        searchAnimator.duration = 300
 
         sharedViewModel.navigateToChatFragment.observe(viewLifecycleOwner) {
             if (it) {
@@ -86,6 +95,14 @@ class FindUsersFragment : Fragment() {
                 BUSY -> startAnimation()
                 PASSED -> stopAnimationWithSuccess()
                 FAILED -> stopAnimationWithFailure()
+            }
+        }
+
+        sharedViewModel.searchStatus.observe(viewLifecycleOwner) {
+            when (it) {
+                BUSY -> startSearchAnimation()
+                PASSED -> stopSearchAnimationWithSuccess()
+                FAILED -> stopSearchAnimationWithFailure()
             }
         }
 
@@ -110,6 +127,11 @@ class FindUsersFragment : Fragment() {
                 }
             }
         }
+
+        binding.searchEditText.addTextChangedListener {
+            sharedViewModel.getMatchingUsers(it.toString())
+        }
+
     }
 
     private fun showSnackBar() {
@@ -165,6 +187,21 @@ class FindUsersFragment : Fragment() {
         couldNotFetchTextView.visibility = View.GONE
         tryAgainTextViewButton.visibility = View.GONE
         animator.start()
+    }
+
+    private fun stopSearchAnimationWithFailure() {
+        searchLoadingIcon.visibility = View.INVISIBLE
+        searchAnimator.cancel()
+    }
+
+    private fun stopSearchAnimationWithSuccess() {
+        searchLoadingIcon.visibility = View.INVISIBLE
+        searchAnimator.cancel()
+    }
+
+    private fun startSearchAnimation() {
+        searchLoadingIcon.visibility = View.VISIBLE
+        searchAnimator.start()
     }
 
     override fun onResume() {

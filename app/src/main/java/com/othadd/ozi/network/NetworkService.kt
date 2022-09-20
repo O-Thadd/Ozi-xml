@@ -10,7 +10,10 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 
-private const val BASE_URL = "http://192.168.43.107:8080" // TODO: place base URL here
+private const val BASE_URL = "http://192.168.43.107:8080"
+
+//"https://coastal-haven-309701.ew.r.appspot.com"
+//"http://192.168.43.107:8080"
 
 private val moshi = Moshi.Builder()
     .add(KotlinJsonAdapterFactory())
@@ -49,6 +52,15 @@ interface NetworkService{
     suspend fun updateStatus(
         @Path("userId") userId: String,
         @Path("update") update: String
+    )
+
+    @GET("getUsersWithMatch/{userId}/{usernameSubString}")
+    suspend fun getUsersWithMatch(@Path("userId")userId: String, @Path("usernameSubString")usernameSubString: String): List<User>
+
+    @POST("resolveGameConflict/{gameModeratorId}/{roundSummary}")
+    suspend fun resolveGameConflict(
+        @Path("gameModeratorId") gameModeratorId: String,
+        @Path("roundSummary") roundSummaryString: String
     )
 }
 

@@ -3,7 +3,7 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context=".ui.FindUsersFragment">
+    tools:context=".ProfileFragment">
 
     <data>
 
@@ -12,14 +12,15 @@
             type="com.othadd.ozi.ui.ChatViewModel" />
 
         <variable
-            name="findUsersFragment"
-            type="com.othadd.ozi.ui.FindUsersFragment" />
+            name="profileFragment"
+            type="com.othadd.ozi.ProfileFragment" />
 
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        >
 
         <LinearLayout
             android:id="@+id/topBar_linearLayout"
@@ -47,7 +48,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:text="find others"
+                android:text="Profile"
                 android:textColor="@color/white"
                 android:textSize="24sp"
                 android:textStyle="bold"
@@ -64,7 +65,6 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:orientation="vertical"
-            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -86,64 +86,11 @@
 
         </LinearLayout>
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/search_constraintLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_dialog_2"
-            android:padding="8dp"
-            android:layout_marginVertical="4dp"
-            android:layout_marginHorizontal="8dp"
-            app:layout_constraintTop_toBottomOf="@id/topBar_linearLayout"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent">
-
-            <EditText
-                android:id="@+id/search_EditText"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="4dp"
-                android:background="@android:color/transparent"
-                android:hint="search"
-                android:inputType="textAutoCorrect|textMultiLine|textCapSentences|textImeMultiLine"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@id/searchLoadingIcon_imageView"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <ImageView
-                android:id="@+id/searchLoadingIcon_imageView"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/ic_busy"
-                android:visibility="invisible"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent"/>
-
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/users_recyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:padding="32dp"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/search_constraintLayout"
-            app:listData="@{viewModel.users}"
-            tools:listitem="@layout/users_list_item" />
-
         <TextView
-            android:id="@+id/couldNotFetchUsers_textView"
+            android:id="@+id/couldNotFetchProfile_textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="could not fetch users"
+            android:text="could not fetch profile"
             android:textSize="16sp"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -165,52 +112,99 @@
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/couldNotFetchUsers_textView" />
+            app:layout_constraintTop_toBottomOf="@id/couldNotFetchProfile_textView" />
 
-        <LinearLayout
-            android:id="@+id/snackBar_linearLayout"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/profileDetailsGroup_constraintLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:alpha="0.0"
-            android:background="@drawable/bg_snackbar"
-            android:gravity="center"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="12dp"
-            app:layout_constraintTop_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent">
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/topBar_linearLayout"
+            >
 
-            <TextView
-                android:id="@+id/snackBarMessage_textView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="12dp"
-                android:text="@{viewModel.snackBarState.message}"
-                android:textSize="16sp"
-                tools:text="Mary has challenged you!" />
-
-            <TextView
-                android:id="@+id/snackBarActionButton_textView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="12dp"
-                android:background="@drawable/bg_button_3"
-                android:onClick="@{() -> viewModel.goToGameRequestSenderChat()}"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="8dp"
-                android:text="@{viewModel.snackBarState.actionButtonText}"
-                android:textStyle="bold"
-                tools:text="Go to chat" />
 
             <ImageView
-                android:id="@+id/closeSnackBarButton_imageView"
+                android:id="@+id/iconUsername_imageView"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ozi_icon_username"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="36dp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"/>
+
+            <TextView
+                android:id="@+id/username_textView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:onClick="@{() -> viewModel.closeSnackBar()}"
-                android:src="@drawable/ic_baseline_close_24" />
+                tools:text="O.Thadd"
+                android:textSize="18sp"
+                android:layout_marginStart="32dp"
+                app:layout_constraintTop_toTopOf="@id/iconUsername_imageView"
+                app:layout_constraintBottom_toBottomOf="@id/iconUsername_imageView"
+                app:layout_constraintStart_toEndOf="@id/iconUsername_imageView"/>
 
-        </LinearLayout>
+            <ImageView
+                android:id="@+id/iconGender_imageView"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ozi_icon_gender"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="36dp"
+                app:layout_constraintTop_toBottomOf="@id/iconUsername_imageView"
+                app:layout_constraintStart_toStartOf="parent"/>
+
+            <TextView
+                android:id="@+id/gender_textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:text="Male"
+                android:textSize="18sp"
+                app:layout_constraintTop_toTopOf="@id/iconGender_imageView"
+                app:layout_constraintBottom_toBottomOf="@id/iconGender_imageView"
+                app:layout_constraintStart_toStartOf="@id/username_textView"/>
+
+            <ImageView
+                android:id="@+id/iconOnlineStatus_imageView"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ozi_icon_online"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="36dp"
+                app:layout_constraintTop_toBottomOf="@id/iconGender_imageView"
+                app:layout_constraintStart_toStartOf="parent"/>
+
+            <TextView
+                android:id="@+id/online_textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:text="Online"
+                android:textSize="18sp"
+                app:layout_constraintTop_toTopOf="@id/iconOnlineStatus_imageView"
+                app:layout_constraintBottom_toBottomOf="@id/iconOnlineStatus_imageView"
+                app:layout_constraintStart_toStartOf="@id/username_textView"/>
+
+            <ImageView
+                android:id="@+id/iconVerificationStatus_imageView"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ozi_icon_verification"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="36dp"
+                app:layout_constraintTop_toBottomOf="@id/iconOnlineStatus_imageView"
+                app:layout_constraintStart_toStartOf="parent"/>
+
+            <TextView
+                android:id="@+id/verification_textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:text="Verified"
+                android:textSize="18sp"
+                app:layout_constraintTop_toTopOf="@id/iconVerificationStatus_imageView"
+                app:layout_constraintBottom_toBottomOf="@id/iconVerificationStatus_imageView"
+                app:layout_constraintStart_toStartOf="@id/username_textView"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

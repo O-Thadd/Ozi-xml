@@ -1,5 +1,6 @@
 package com.othadd.ozi
 
+import android.os.Handler
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -7,12 +8,12 @@ import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.database.DBChat
 import com.othadd.ozi.database.getNoDialogDialogType
 import com.othadd.ozi.gaming.GameManager
+import com.othadd.ozi.gaming.TIMER_TO_RECEIVE_RESPONSE
 import com.othadd.ozi.network.*
-import com.othadd.ozi.utils.SettingsRepo
-import com.othadd.ozi.utils.WORKER_MESSAGE_KEY
-import com.othadd.ozi.utils.messageToString
+import com.othadd.ozi.utils.*
 import com.othadd.ozi.workers.SendChatMessageWorker
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import java.util.*
 
 object MessagingRepoX {
@@ -26,6 +27,12 @@ object MessagingRepoX {
     ) {
         val newMessage =
             Message(senderId, receiverId, messageBody, Calendar.getInstance().timeInMillis)
+
+        val messagePackage = MessagePackage()
+        messagePackage.gameModeratorId = getGameModeratorId()
+        val packageString = messagePackageToString(messagePackage)
+        newMessage.messagePackage = packageString
+
         saveOutGoingMessage(application, newMessage)
         scheduleMessageForSendToServer(newMessage, application, thisUserId)
     }
@@ -44,7 +51,6 @@ object MessagingRepoX {
 
         workManager.enqueue(workRequest)
     }
-
 
     private suspend fun findOrCreateChat(userId: String, chatDao: ChatDao): Pair<DBChat, Boolean> {
 
@@ -81,12 +87,24 @@ object MessagingRepoX {
         newMessage: Message,
         chatMateId: String
     ) {
+
+        newMessage.dateTime = Calendar.getInstance().timeInMillis
         val chatDao = application.database.chatDao()
         val resultOfFindChat = findOrCreateChat(chatMateId, chatDao)
         val chat = resultOfFindChat.first
         val chatIsNew = resultOfFindChat.second
         chat.addMessage(newMessage)
         if (chatIsNew) chatDao.insert(chat) else chatDao.update(chat)
+
+
+        Handler().postDelayed({
+            SettingsRepo(application).updateScroll(true)
+        }, 100)
+
+        Handler().postDelayed({
+            SettingsRepo(application).updateScroll(false)
+        }, 200)
+
     }
 
     private suspend fun saveOutGoingMessage(application: OziApplication, newMessage: Message) {
@@ -96,7 +114,21 @@ object MessagingRepoX {
 
     suspend fun saveIncomingMessage(application: OziApplication, newMessage: Message) {
         val chatMateId = newMessage.senderId
-        saveMessage(application, newMessage, chatMateId)
+//        saveMessage(application, newMessage, chatMateId)
+
+
+        val delayPosting = try { getPackageFromMessage(newMessage).delayPosting }
+        catch (e: Exception) { false }
+
+        if (delayPosting) {
+            Handler().postDelayed({
+                runBlocking {
+                    saveMessage(application, newMessage, chatMateId)
+                }
+            }, 2000)
+        } else {
+            saveMessage(application, newMessage, chatMateId)
+        }
     }
 
     suspend fun sendMessageToServer(message: Message) {
@@ -112,6 +144,11 @@ object MessagingRepoX {
         } catch (e: Exception) {
             throw e
         }
+
+//        for (message in newMessages){
+//            message.dateTime = Calendar.getInstance().timeInMillis
+//        }
+
         handleReceivedMessages(newMessages, application)
     }
 
@@ -123,16 +160,34 @@ object MessagingRepoX {
 //        handle regular chat messages
         val chatMessages = newMessages.filter { it.type == CHAT_MESSAGE_TYPE }
         for (message in chatMessages) {
-            saveIncomingMessage(application, message.toMessage())
+
+            val delayPosting = try { getPackageFromMessage(message.toMessage()).delayPosting }
+            catch (e: Exception) { false }
+
+            if (delayPosting) {
+                Handler().postDelayed({
+                    runBlocking {
+                        saveIncomingMessage(application, message.toMessage())
+                    }
+                }, 2000)
+            } else {
+                saveIncomingMessage(application, message.toMessage())
+            }
+
         }
 
 //        handle status update messages
         val statusUpdateMessages = newMessages.filter { it.type == STATUS_UPDATE_MESSAGE_TYPE }
-        for (message in statusUpdateMessages){
+        for (message in statusUpdateMessages) {
             handleStatusUpdateMessage(message, application.database.chatDao())
         }
 
-//        handle other types (currently, gaming messages)
+        // handle other types
+        // (currently, just gaming messages. which are 'game request message type', 'game request response message type' and 'game manager message type').
+        // The 'game manager message type' is the rightful type for all messages meant for the game manager.
+        // however, the 'game request message type' and 'game request response message type' were implemented before 'game manager message type'.
+        // so currently messages of the 3 types are sent to game manager.
+        // there should be a reimplementation on both client and server side to collapse the older 2 types to the newer 'game manager message type'.
         val gamingMessages = newMessages.toMutableList()
         gamingMessages.removeAll(chatMessages)
         gamingMessages.removeAll(statusUpdateMessages)
@@ -144,7 +199,7 @@ object MessagingRepoX {
     private suspend fun handleStatusUpdateMessage(newMessage: NWMessage, chatDao: ChatDao) {
         val message = newMessage.toMessage()
         val chat = findOrCreateChat(message.senderId, chatDao).first
-        when(message.body){
+        when (message.body) {
             USER_ONLINE -> chat.onlineStatus = true
             USER_OFFLINE -> chat.onlineStatus = false
             USER_VERIFIED -> chat.verificationStatus = true
@@ -177,8 +232,16 @@ object MessagingRepoX {
         GameManager.notifyDialogOkayPressed(application)
     }
 
-    fun getGameRequestSenderId(): String{
+    fun getGameRequestSenderId(): String {
         return GameManager.getGameRequestSenderId()
+    }
+
+    private fun getGameModeratorId(): String {
+        return GameManager.getGameModeratorId()
+    }
+
+    private fun getPackageFromMessage(message: Message): MessagePackage {
+        return stringToMessagePackage(message.messagePackage)
     }
 
 }

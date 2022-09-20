@@ -36,20 +36,22 @@ class ChatFragment : Fragment() {
         )
     }
 
+
     private lateinit var binding: FragmentChatBinding
     private lateinit var messagesRecyclerAdapter: MessagesRecyclerAdapter
     private lateinit var confirmSendGameRequestDialog: ConstraintLayout
     private lateinit var promptDialog: ConstraintLayout
     private lateinit var notifyDialog: ConstraintLayout
     private lateinit var screenView: View
-    private lateinit var bottomComponents: LinearLayout
     private lateinit var snackBar: LinearLayout
     private lateinit var snackBarActionButton: TextView
     private lateinit var snackBarCloseButton: ImageView
     private lateinit var messagesRecyclerView: RecyclerView
+    private lateinit var typeMessageEditTextGroup: ConstraintLayout
 
     private var snackBarIsShowing = false
     private var chatSwitchBySnackBar = false
+    private var chatFragmentWasClosed = true
     private lateinit var backPressedCallback: OnBackPressedCallback
     private lateinit var chatMateUserId: String
 
@@ -84,14 +86,16 @@ class ChatFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        if (sharedViewModel.scrollToBottomOfChat) {
-            scrollToRecyclerViewBottom()
-            sharedViewModel.scrollToBottomOfChat = false
-        }
+//        scrollOnFragmentResume()
         sharedViewModel.refreshMessages("Could not refresh messages")
         sharedViewModel.resetNavigateChatsToChatFragment()
         sharedViewModel.markMessagesRead()
         sharedViewModel.resetChatStartedByActivity()
+
+        if (chatFragmentWasClosed) {
+            chatFragmentWasClosed = false
+            scrollToRecyclerViewBottom()
+        }
     }
 
     override fun onPause() {
@@ -107,10 +111,10 @@ class ChatFragment : Fragment() {
         notifyDialog = binding.notifyDialogConstraintLayout
         screenView = binding.dialogOverlayScreenView
         messagesRecyclerView = binding.messagesRecyclerView
-        bottomComponents = binding.chatFragmentBottomComponentsLinearLayout
         snackBar = binding.snackBarLinearLayout
         snackBarActionButton = binding.snackBarActionButtonTextView
         snackBarCloseButton = binding.closeSnackBarButtonImageView
+        typeMessageEditTextGroup = binding.bottomConstraintLayout
 
         sharedViewModel.chat.observe(viewLifecycleOwner) { dbChat ->
             val messages = dbChat.messages.sortedBy { it.dateTime }
@@ -130,19 +134,27 @@ class ChatFragment : Fragment() {
                 binding.emptyStateLinearLayout.visibility = View.GONE
             }
 
-            Handler(Looper.getMainLooper()).postDelayed({
-                scrollToRecyclerViewBottom()
-            }, 50)
+//            Handler(Looper.getMainLooper()).postDelayed({
+//                    doAppropriateScrolling(dbChat.chatMateId, dbChat.messages.size)
+//            }, 50)
         }
 
         sharedViewModel.allMessagesSentForChat.observe(viewLifecycleOwner) {
             if (it) sharedViewModel.markMessagesSent()
         }
 
+        sharedViewModel.shouldScrollChat.observe(viewLifecycleOwner) {
+            if (it) {
+                smoothScrollToRecyclerBottom()
+            }
+        }
+
+
         observeDataForDialog(
             sharedViewModel.showConfirmGameRequestDialog,
             confirmSendGameRequestDialog
         )
+
 
         sharedViewModel.chat.observe(viewLifecycleOwner) {
 
@@ -180,7 +192,6 @@ class ChatFragment : Fragment() {
 //                    that is currently true, but that may change in the future and inwhich case this check will have to be reimplemented.
 //                    consider adding a field to the snackbarstate class to indicate the nature of info such as 'network', 'game request', etc.
                     if (chatMateUserId != sharedViewModel.getGameRequestSenderId()) {
-                        snackBar.visibility = View.VISIBLE
                         snackBarActionButton.visibility = View.VISIBLE
                         snackBarCloseButton.visibility = View.VISIBLE
                         showSnackBar()
@@ -189,7 +200,6 @@ class ChatFragment : Fragment() {
 
 //                updateSnackBar case
                 !it.showActionButton && it.message != "" -> {
-                    snackBar.visibility = View.VISIBLE
                     snackBarActionButton.visibility = View.GONE
                     snackBarCloseButton.visibility = View.GONE
                     showSnackBar()
@@ -208,18 +218,30 @@ class ChatFragment : Fragment() {
                 findNavController().popBackStack()
             }
         }
+
     }
 
     private fun showSnackBar() {
+
         if (snackBarIsShowing) {
             hideSnackBar()
         }
-        val moveBottomComponentsUpAnimator =
-            ObjectAnimator.ofFloat(bottomComponents, View.TRANSLATION_Y, -30f)
+
+        val moveTypeMessageGroupUpAnimator =
+            ObjectAnimator.ofFloat(
+                typeMessageEditTextGroup,
+                View.TRANSLATION_Y,
+                -snackBar.height.toFloat()
+            )
+        val moveSnackBarUpAnimator =
+            ObjectAnimator.ofFloat(snackBar, View.TRANSLATION_Y, -snackBar.height.toFloat())
+        val moveUpAnimatorSet = AnimatorSet()
+        moveUpAnimatorSet.playTogether(moveTypeMessageGroupUpAnimator, moveSnackBarUpAnimator)
+
         val showSnackBarAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 0.0f, 1.0f)
 
         val generalAnimatorSet = AnimatorSet()
-        generalAnimatorSet.playSequentially(moveBottomComponentsUpAnimator, showSnackBarAnimator)
+        generalAnimatorSet.playSequentially(moveUpAnimatorSet, showSnackBarAnimator)
         generalAnimatorSet.start()
 
         snackBarIsShowing = true
@@ -230,12 +252,17 @@ class ChatFragment : Fragment() {
             return
         }
 
-        val moveBottomComponentsDownAnimator =
-            ObjectAnimator.ofFloat(bottomComponents, View.TRANSLATION_Y, 180f)
+        val moveTypeMessageGroupDownAnimator =
+            ObjectAnimator.ofFloat(typeMessageEditTextGroup, View.TRANSLATION_Y, 0f)
+        val moveSnackBarDownAnimator =
+            ObjectAnimator.ofFloat(snackBar, View.TRANSLATION_Y, 0f)
+        val moveDownAnimatorSet = AnimatorSet()
+        moveDownAnimatorSet.playTogether(moveTypeMessageGroupDownAnimator, moveSnackBarDownAnimator)
+
         val hideSnackBarAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 1.0f, 0.0f)
 
         val generalAnimatorSet = AnimatorSet()
-        generalAnimatorSet.playSequentially(hideSnackBarAnimator, moveBottomComponentsDownAnimator)
+        generalAnimatorSet.playSequentially(hideSnackBarAnimator, moveDownAnimatorSet)
         generalAnimatorSet.start()
 
         snackBarIsShowing = false
@@ -275,10 +302,35 @@ class ChatFragment : Fragment() {
         }
     }
 
+    private fun doAppropriateScrolling(userId: String, messagesSize: Int) {
+
+//        chatHasNewMessage method also returns true if the check is occurring for the 1st time for the chat
+        val theNumberOfMessagesAboveWhichSmoothScrollingStopsLookingCool = 45
+
+        if (sharedViewModel.chatHasNewMessage(
+                userId,
+                messagesSize
+            ) && messagesSize < theNumberOfMessagesAboveWhichSmoothScrollingStopsLookingCool
+        ) {
+            smoothScrollToRecyclerBottom()
+            return
+        }
+    }
+
     private fun scrollToRecyclerViewBottom() {
-        val listSize = binding.messagesRecyclerView.layoutManager?.itemCount
-        if (listSize != null && listSize != 0)
-            binding.messagesRecyclerView.smoothScrollToPosition(listSize - 1)
+        Handler(Looper.getMainLooper()).postDelayed({
+            val listSize = binding.messagesRecyclerView.layoutManager?.itemCount
+            if (listSize != null && listSize != 0)
+                binding.messagesRecyclerView.scrollToPosition(listSize - 1)
+        }, 50)
+    }
+
+    private fun smoothScrollToRecyclerBottom() {
+        Handler(Looper.getMainLooper()).postDelayed({
+            val listSize = binding.messagesRecyclerView.layoutManager?.itemCount
+            if (listSize != null && listSize != 0)
+                binding.messagesRecyclerView.smoothScrollToPosition(listSize - 1)
+        }, 50)
     }
 
     fun cancelSendGameRequest() {
@@ -296,7 +348,13 @@ class ChatFragment : Fragment() {
         screenView.visibility = View.VISIBLE
         hideKeyboard()
 
-        val movePropertyValueHolder = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, -1200f)
+        val parent = dialog.parent as ViewGroup
+
+        val movePropertyValueHolder = PropertyValuesHolder.ofFloat(
+            View.TRANSLATION_Y,
+            0f,
+            -(parent.height / 2 + dialog.height / 2).toFloat()
+        )
         val transparencyValueHolder = PropertyValuesHolder.ofFloat(View.ALPHA, 1.0f)
         val animator = ObjectAnimator.ofPropertyValuesHolder(
             dialog,
@@ -317,7 +375,7 @@ class ChatFragment : Fragment() {
         backPressedCallback.isEnabled = false
         screenView.visibility = View.GONE
 
-        val movePropertyValueHolder = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 1200f)
+        val movePropertyValueHolder = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 0f)
         val transparencyValueHolder = PropertyValuesHolder.ofFloat(View.ALPHA, 0.0f)
         val animator = ObjectAnimator.ofPropertyValuesHolder(
             dialog,
@@ -345,6 +403,10 @@ class ChatFragment : Fragment() {
 
     fun doNothing() {
         //do nothing
+    }
+
+    fun resetDialog() {
+        hideAllDialogs()
     }
 
     fun snackBarSwitchToGameRequestSenderChat() {

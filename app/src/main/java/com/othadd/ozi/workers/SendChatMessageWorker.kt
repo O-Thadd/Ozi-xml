@@ -18,7 +18,7 @@ class SendChatMessageWorker(appContext: Context, workerParams: WorkerParameters)
             Result.success()
         } catch (throwable: Throwable) {
             Log.e("Worker send message", throwable.message.toString())
-            Result.retry()
+            Result.failure()
         }
     }
 }

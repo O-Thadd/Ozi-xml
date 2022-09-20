@@ -8,5 +8,6 @@ class OziApplication : Application(){
 
     companion object{
         var inForeGround = false
+//        var isFreshStartup = true
     }
 }

@@ -53,6 +53,12 @@ class ChatViewModel(
     private var _usersFetchStatus = MutableLiveData<Int>()
     val usersFetchStatus: LiveData<Int> get() = _usersFetchStatus
 
+    private var _searchStatus = MutableLiveData<Int>()
+    val searchStatus: LiveData<Int> get() = _searchStatus
+
+    private var _profileFetchStatus = MutableLiveData<Int>()
+    val profileFetchStatus: LiveData<Int> get() = _profileFetchStatus
+
     private var _users = MutableLiveData<List<User>>()
     val users: LiveData<List<User>> get() = _users
 
@@ -75,7 +81,7 @@ class ChatViewModel(
     private var _navigateToChatsFragment = MutableLiveData<Boolean>()
     val navigateToChatsFragment: LiveData<Boolean> get() = _navigateToChatsFragment
 
-    var scrollToBottomOfChat = true
+    private val chatsAndMessagesSize = mutableListOf<ChatAndMessagesSize>()
 
     var allMessagesSentForChat: LiveData<Boolean> =
         Transformations
@@ -90,8 +96,6 @@ class ChatViewModel(
     val snackBarState: LiveData<SnackBarState> =
         Transformations.map(settingsRepo.snackBarStateFlow().asLiveData()) {
 
-//            snackBarHideAnimationDistanceOffset = if (it.showActionButton) 0f else 35f
-
 //        this checks if the snackBar is a noSnackBar snackBar. done by simply checking if the message is an empty string.
 //        a better implementation would be to include a field that indicates snackBar type in the snackBar class, and then check with that field.
             if (it.message != "") {
@@ -102,6 +106,8 @@ class ChatViewModel(
             it
         }
 
+    val shouldScrollChat: LiveData<Boolean> = settingsRepo.scrollFlow().asLiveData()
+
     private val snackBarTimer = object : CountDownTimer(7000, 1000) {
         override fun onTick(millisUntilFinished: Long) {}
         override fun onFinish() {
@@ -109,8 +115,21 @@ class ChatViewModel(
         }
     }
 
-//    var snackBarHideAnimationDistanceOffset = 30f
+    private var _profile = MutableLiveData<User>()
+    val profile: LiveData<User> get() = _profile
 
+
+    fun chatHasNewMessage(userId: String, messagesSize: Int): Boolean {
+        val chatAndMessagesSize = chatsAndMessagesSize.find { it.userId == userId }
+        if (chatAndMessagesSize == null) {
+            chatsAndMessagesSize.add(ChatAndMessagesSize(userId, messagesSize))
+            return true
+        }
+
+        val chatHasNewMessage = chatAndMessagesSize.messagesSize != messagesSize
+        chatAndMessagesSize.messagesSize = messagesSize
+        return chatHasNewMessage
+    }
 
     fun sendMessage(messageBody: String, receiverId: String, senderId: String = thisUserId) {
         viewModelScope.launch {
@@ -154,7 +173,10 @@ class ChatViewModel(
                         } catch (e: Exception) {
                             _registrationStatus.value = FAILED
                             Log.e("registration error", e.toString())
-                            showNetworkErrorToast(getApplication(), "encountered error trying to register")
+                            showNetworkErrorToast(
+                                getApplication(),
+                                "encountered error trying to register"
+                            )
                         }
                     } else {
                         _registrationStatus.value = FAILED
@@ -203,6 +225,41 @@ class ChatViewModel(
                 _usersFetchStatus.value = FAILED
                 showNetworkErrorToast(getApplication(), "Could not fetch users")
                 _usersFetchStatus.value = DEFAULT
+            }
+        }
+    }
+
+    fun getMatchingUsers(usernameSubString: String) {
+        viewModelScope.launch {
+            try {
+                _searchStatus.value = BUSY
+                if (usernameSubString.isBlank()) {
+                    val users = NetworkApi.retrofitService.getUsers(thisUserId)
+                    _users.value = users
+                } else {
+                    val users = NetworkApi.retrofitService.getUsersWithMatch(thisUserId, usernameSubString)
+                    _users.value = users
+                }
+                _searchStatus.value = PASSED
+            } catch (e: Exception) {
+                _searchStatus.value = FAILED
+                showNetworkErrorToast(getApplication(), "Could not fetch users")
+                _searchStatus.value = DEFAULT
+            }
+        }
+    }
+
+    fun getProfile() {
+        viewModelScope.launch {
+            try {
+                _profileFetchStatus.value = BUSY
+                val profile = NetworkApi.retrofitService.getUser(thisUserId)
+                _profile.value = profile
+                _profileFetchStatus.value = PASSED
+            } catch (e: Exception) {
+                _profileFetchStatus.value = FAILED
+                showNetworkErrorToast(getApplication(), "Could not fetch profile")
+                _profileFetchStatus.value = DEFAULT
             }
         }
     }
@@ -277,10 +334,6 @@ class ChatViewModel(
         _navigateToChatFragment.value = false
     }
 
-    fun updateNavigateChatsToChatFragment(newValue: Boolean) {
-        _navigateToChatFragment.value = newValue
-    }
-
     fun markMessagesSent() {
         viewModelScope.launch {
             try {
@@ -345,6 +398,7 @@ class ChatViewModel(
         _registrationStatus.value = DEFAULT
     }
 
+    data class ChatAndMessagesSize(val userId: String, var messagesSize: Int)
 }
 
 class ChatViewModelFactory(

@@ -1,6 +1,7 @@
 package com.othadd.ozi.utils
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.othadd.ozi.ui.SnackBarState
@@ -21,6 +22,7 @@ class SettingsRepo(private val context: Context) {
     private val userIdKey = stringPreferencesKey("userIdKey")
     private val usernameKey = stringPreferencesKey("usernameKey")
     private val snackBarKey = stringPreferencesKey("snackBarKey")
+    private val scrollKey = booleanPreferencesKey("scrollKey")
 
     fun getUserId(): String {
 
@@ -68,6 +70,20 @@ class SettingsRepo(private val context: Context) {
     fun snackBarStateFlow(): Flow<SnackBarState> {
         return context.dataStore.data.map {
             stringToSnackBar(it[snackBarKey]) ?: getNoSnackBarSnackBar()
+        }
+    }
+
+    fun updateScroll(scroll: Boolean){
+        runBlocking {
+            context.dataStore.edit {
+                it[scrollKey] = scroll
+            }
+        }
+    }
+
+    fun scrollFlow(): Flow<Boolean> {
+        return context.dataStore.data.map {
+            it[scrollKey] ?: false
         }
     }
 

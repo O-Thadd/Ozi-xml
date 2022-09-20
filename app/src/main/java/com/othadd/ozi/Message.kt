@@ -1,5 +1,6 @@
 package com.othadd.ozi
 
+import com.othadd.ozi.gaming.DUMMY_STRING
 import java.text.DateFormat
 import java.util.*
 
@@ -9,6 +10,7 @@ const val CHAT_MESSAGE_TYPE = "Chat Message"
 const val GAME_REQUEST_MESSAGE_TYPE = "Game Request Message"
 const val GAME_REQUEST_RESPONSE_MESSAGE_TYPE = "Game Request Response Message"
 const val STATUS_UPDATE_MESSAGE_TYPE = "Status Update Message"
+const val GAME_MANAGER_MESSAGE_TYPE = "Game Manager Message"
 
 const val SERVER_SENDER_TYPE = "Server Sender Type"
 const val CHAT_MATE_SENDER_TYPE = "ChatMate Sender Type"
@@ -29,13 +31,16 @@ data class Message(
     val senderId: String,
     val receiverId: String,
     var body: String,
-    val dateTime: Long
+    var dateTime: Long
 ) {
     var id: String = UUID.randomUUID().toString()
     var type: String = CHAT_MESSAGE_TYPE
     var senderType: String = CHAT_MATE_SENDER_TYPE
+    var messagePackage: String = "null" // if message with a package has to be sent. then the package field must be updated immediately after message construction
 
-//    this field is only relevant for sent messages. completely irrelevant for received messages.
+
+    //this field is only relevant for sent messages. completely irrelevant for received messages.
+    // also not accounted for in conversion to NWMessage.
     var sent: Boolean = false
 
     constructor(senderId: String, receiverId: String, type: String) : this(
@@ -72,6 +77,7 @@ data class Message(
         val nWMessage = NWMessage(senderId, receiverId, body, dateTime, id)
         nWMessage.type = type
         nWMessage.senderType = senderType
+        nWMessage.messagePackage = messagePackage
         return nWMessage
     }
 
@@ -107,12 +113,13 @@ data class NWMessage(
     val senderId: String,
     val receiverId: String,
     val body: String,
-    val dateTime: Long,
+    var dateTime: Long,
     val id: String
 ) {
 
     lateinit var type: String
     var senderType = CHAT_MATE_SENDER_TYPE
+    var messagePackage: String = DUMMY_STRING
 
     fun toMessage(): Message {
         val message = Message(senderId, receiverId, body, dateTime)
@@ -120,6 +127,7 @@ data class NWMessage(
             id = this@NWMessage.id
             type = this@NWMessage.type
             senderType = this@NWMessage.senderType
+            messagePackage = this@NWMessage.messagePackage
         }
         return message
     }
