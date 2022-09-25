@@ -23,6 +23,7 @@ class SettingsRepo(private val context: Context) {
     private val usernameKey = stringPreferencesKey("usernameKey")
     private val snackBarKey = stringPreferencesKey("snackBarKey")
     private val scrollKey = booleanPreferencesKey("scrollKey")
+    private val markSentKey = booleanPreferencesKey("markSentKey")
 
     fun getUserId(): String {
 
@@ -84,6 +85,19 @@ class SettingsRepo(private val context: Context) {
     fun scrollFlow(): Flow<Boolean> {
         return context.dataStore.data.map {
             it[scrollKey] ?: false
+        }
+
+    }fun updateMarkSent(update: Boolean){
+        runBlocking {
+            context.dataStore.edit {
+                it[markSentKey] = update
+            }
+        }
+    }
+
+    fun markSentFlow(): Flow<Boolean> {
+        return context.dataStore.data.map {
+            it[markSentKey] ?: false
         }
     }
 

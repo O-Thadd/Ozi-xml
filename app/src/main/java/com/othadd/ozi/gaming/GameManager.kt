@@ -119,7 +119,7 @@ object GameManager {
 
         for (message in messages) {
             var messagePackage: MessagePackage? = null
-            var sendMessageRightAway = false
+            var sendMessageRightAway: Boolean
             var carryingGameModeratorId = false
 
             try {
@@ -211,13 +211,7 @@ object GameManager {
                         gameRequestSenderId = message.senderId
                         SettingsRepo(application).updateSnackBarState(
                             getPromptSnackBar(
-                                "${
-                                    getUsername(
-                                        message.senderId,
-                                        application
-                                    )
-                                } has challenged you!", "Go to chat"
-                            )
+                                "${getUsername(message.senderId, application)} has challenged you!", "Go to chat")
                         )
                     }
                 }

@@ -83,21 +83,15 @@ class ChatViewModel(
 
     private val chatsAndMessagesSize = mutableListOf<ChatAndMessagesSize>()
 
-    var allMessagesSentForChat: LiveData<Boolean> =
-        Transformations
-            .map(
-                WorkManager.getInstance(getApplication()).getWorkInfosByTagLiveData(thisUserId)
-            ) { workInfoList ->
-                workInfoList.all { it.state == WorkInfo.State.SUCCEEDED }
-            }
+    val markAllMessagesSent = settingsRepo.markSentFlow().asLiveData()
 
     var chatStartedByActivity = false
 
     val snackBarState: LiveData<SnackBarState> =
         Transformations.map(settingsRepo.snackBarStateFlow().asLiveData()) {
 
-//        this checks if the snackBar is a noSnackBar snackBar. done by simply checking if the message is an empty string.
-//        a better implementation would be to include a field that indicates snackBar type in the snackBar class, and then check with that field.
+        // this checks if the snackBar is a noSnackBar snackBar. done by simply checking if the message is an empty string.
+        // a better implementation would be to include a field that indicates snackBar type in the snackBar class, and then check with that field.
             if (it.message != "") {
                 snackBarTimer.cancel()
                 snackBarTimer.start()

@@ -44,6 +44,7 @@ class ChatsFragment : Fragment() {
     private lateinit var menuListLinearLayout: LinearLayout
 
     private var snackBarIsShowing = false
+    private var snackBarHeight: Float = 0f
 
 
     override fun onCreateView(
@@ -97,6 +98,7 @@ class ChatsFragment : Fragment() {
         snackBarCloseButton = binding.closeSnackBarButtonImageView
         findOthersTextView = binding.findOthersButtonTextView
         menuListLinearLayout = binding.menuListLinearLayout
+        snackBarHeight = snackBar.height.toFloat()
 
         sharedViewModel.chats.observe(viewLifecycleOwner) {
             chatsRecyclerAdapter.submitList(it)
@@ -122,6 +124,7 @@ class ChatsFragment : Fragment() {
 //                    snackBar.visibility = View.VISIBLE
                     snackBarActionButton.visibility = View.VISIBLE
                     snackBarCloseButton.visibility = View.VISIBLE
+                    snackBarHeight = snackBar.height.toFloat()
                     showSnackBar()
                 }
 
@@ -129,6 +132,7 @@ class ChatsFragment : Fragment() {
 //                    snackBar.visibility = View.VISIBLE
                     snackBarActionButton.visibility = View.GONE
                     snackBarCloseButton.visibility = View.GONE
+                    snackBarHeight = snackBar.height.toFloat()
                     showSnackBar()
                 }
 
@@ -164,17 +168,14 @@ class ChatsFragment : Fragment() {
     }
 
     private fun showSnackBar() {
-        if (snackBarIsShowing) {
-            hideSnackBar()
-        }
 
-        val moveFindOthersButtonUpAnimator = ObjectAnimator.ofFloat(findOthersTextView, View.TRANSLATION_Y, -snackBar.height.toFloat())
+        val moveFindOthersButtonUpAnimator = ObjectAnimator.ofFloat(findOthersTextView, View.TRANSLATION_Y, -snackBarHeight)
         val moveSnackBarUpAnimator =
-            ObjectAnimator.ofFloat(snackBar, View.TRANSLATION_Y, -snackBar.height.toFloat())
+            ObjectAnimator.ofFloat(snackBar, View.TRANSLATION_Y, -snackBarHeight)
         val moveUpAnimatorSet = AnimatorSet()
         moveUpAnimatorSet.playTogether(moveFindOthersButtonUpAnimator, moveSnackBarUpAnimator)
 
-        val showSnackBarAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 0.0f, 1.0f)
+        val showSnackBarAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 1.0f, 1.0f)
 
         val generalAnimatorSet = AnimatorSet()
         generalAnimatorSet.playSequentially(moveUpAnimatorSet, showSnackBarAnimator)
@@ -184,9 +185,6 @@ class ChatsFragment : Fragment() {
     }
 
     private fun hideSnackBar() {
-        if (!snackBarIsShowing) {
-            return
-        }
 
         val moveFindOthersButtonDownAnimator = ObjectAnimator.ofFloat(findOthersTextView, View.TRANSLATION_Y, 0f)
         val moveSnackBarDownAnimator =
@@ -194,7 +192,7 @@ class ChatsFragment : Fragment() {
         val moveDownAnimatorSet = AnimatorSet()
         moveDownAnimatorSet.playTogether(moveFindOthersButtonDownAnimator, moveSnackBarDownAnimator)
 
-        val hideSnackBarAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 1.0f, 0.0f)
+        val hideSnackBarAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 1.0f, 1.0f)
 
         val generalAnimatorSet = AnimatorSet()
         generalAnimatorSet.playSequentially(hideSnackBarAnimator, moveDownAnimatorSet)
@@ -202,11 +200,6 @@ class ChatsFragment : Fragment() {
 
         snackBarIsShowing = false
     }
-
-//    private fun getHideAnimationDistance(): Float{
-//        return 190f - sharedViewModel.snackBarHideAnimationDistanceOffset
-//    }
-
 
     private fun createChannel(channelId: String, channelName: String, description: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

@@ -9,4 +9,6 @@ class MessagePackage {
     val delayPosting = false
     var roundSummary: String = NOT_INITIALIZED
     var contentDesc: String = NOT_INITIALIZED
+    val delayPostingBy = 0
+
 }

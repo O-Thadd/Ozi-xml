@@ -54,6 +54,7 @@ class ChatFragment : Fragment() {
     private var chatFragmentWasClosed = true
     private lateinit var backPressedCallback: OnBackPressedCallback
     private lateinit var chatMateUserId: String
+    private var snackBarHeight: Float = 0f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -115,6 +116,7 @@ class ChatFragment : Fragment() {
         snackBarActionButton = binding.snackBarActionButtonTextView
         snackBarCloseButton = binding.closeSnackBarButtonImageView
         typeMessageEditTextGroup = binding.bottomConstraintLayout
+        snackBarHeight = snackBar.height.toFloat()
 
         sharedViewModel.chat.observe(viewLifecycleOwner) { dbChat ->
             val messages = dbChat.messages.sortedBy { it.dateTime }
@@ -139,7 +141,7 @@ class ChatFragment : Fragment() {
 //            }, 50)
         }
 
-        sharedViewModel.allMessagesSentForChat.observe(viewLifecycleOwner) {
+        sharedViewModel.markAllMessagesSent.observe(viewLifecycleOwner) {
             if (it) sharedViewModel.markMessagesSent()
         }
 
@@ -194,6 +196,7 @@ class ChatFragment : Fragment() {
                     if (chatMateUserId != sharedViewModel.getGameRequestSenderId()) {
                         snackBarActionButton.visibility = View.VISIBLE
                         snackBarCloseButton.visibility = View.VISIBLE
+                        snackBarHeight = snackBar.height.toFloat()
                         showSnackBar()
                     }
                 }
@@ -202,6 +205,7 @@ class ChatFragment : Fragment() {
                 !it.showActionButton && it.message != "" -> {
                     snackBarActionButton.visibility = View.GONE
                     snackBarCloseButton.visibility = View.GONE
+                    snackBarHeight = snackBar.height.toFloat()
                     showSnackBar()
                 }
 
@@ -223,18 +227,18 @@ class ChatFragment : Fragment() {
 
     private fun showSnackBar() {
 
-        if (snackBarIsShowing) {
-            hideSnackBar()
-        }
+//        if (snackBarIsShowing) {
+//            hideSnackBar()
+//        }
 
         val moveTypeMessageGroupUpAnimator =
             ObjectAnimator.ofFloat(
                 typeMessageEditTextGroup,
                 View.TRANSLATION_Y,
-                -snackBar.height.toFloat()
+                -snackBarHeight
             )
         val moveSnackBarUpAnimator =
-            ObjectAnimator.ofFloat(snackBar, View.TRANSLATION_Y, -snackBar.height.toFloat())
+            ObjectAnimator.ofFloat(snackBar, View.TRANSLATION_Y, -snackBarHeight)
         val moveUpAnimatorSet = AnimatorSet()
         moveUpAnimatorSet.playTogether(moveTypeMessageGroupUpAnimator, moveSnackBarUpAnimator)
 
@@ -248,9 +252,9 @@ class ChatFragment : Fragment() {
     }
 
     private fun hideSnackBar() {
-        if (!snackBarIsShowing) {
-            return
-        }
+//        if (!snackBarIsShowing) {
+//            return
+//        }
 
         val moveTypeMessageGroupDownAnimator =
             ObjectAnimator.ofFloat(typeMessageEditTextGroup, View.TRANSLATION_Y, 0f)

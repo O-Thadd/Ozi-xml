@@ -8,7 +8,6 @@ import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.database.DBChat
 import com.othadd.ozi.database.getNoDialogDialogType
 import com.othadd.ozi.gaming.GameManager
-import com.othadd.ozi.gaming.TIMER_TO_RECEIVE_RESPONSE
 import com.othadd.ozi.network.*
 import com.othadd.ozi.utils.*
 import com.othadd.ozi.workers.SendChatMessageWorker
@@ -46,7 +45,6 @@ object MessagingRepoX {
         val workManager = WorkManager.getInstance(application)
         val workRequest = OneTimeWorkRequestBuilder<SendChatMessageWorker>()
             .setInputData(workDataOf(WORKER_MESSAGE_KEY to newMessageString))
-            .addTag(thisUserId)
             .build()
 
         workManager.enqueue(workRequest)
@@ -114,20 +112,19 @@ object MessagingRepoX {
 
     suspend fun saveIncomingMessage(application: OziApplication, newMessage: Message) {
         val chatMateId = newMessage.senderId
-//        saveMessage(application, newMessage, chatMateId)
 
+        val delay = try { getPackageFromMessage(newMessage).delayPostingBy }
+        catch (e: Exception) { 0 }
 
-        val delayPosting = try { getPackageFromMessage(newMessage).delayPosting }
-        catch (e: Exception) { false }
+        if (delay == 0) {
+            saveMessage(application, newMessage, chatMateId)
+        } else {
 
-        if (delayPosting) {
             Handler().postDelayed({
                 runBlocking {
                     saveMessage(application, newMessage, chatMateId)
                 }
-            }, 2000)
-        } else {
-            saveMessage(application, newMessage, chatMateId)
+            }, delay.toLong())
         }
     }
 
@@ -144,11 +141,6 @@ object MessagingRepoX {
         } catch (e: Exception) {
             throw e
         }
-
-//        for (message in newMessages){
-//            message.dateTime = Calendar.getInstance().timeInMillis
-//        }
-
         handleReceivedMessages(newMessages, application)
     }
 
@@ -186,7 +178,7 @@ object MessagingRepoX {
         // (currently, just gaming messages. which are 'game request message type', 'game request response message type' and 'game manager message type').
         // The 'game manager message type' is the rightful type for all messages meant for the game manager.
         // however, the 'game request message type' and 'game request response message type' were implemented before 'game manager message type'.
-        // so currently messages of the 3 types are sent to game manager.
+        // so currently, messages of the 3 types are sent to game manager.
         // there should be a reimplementation on both client and server side to collapse the older 2 types to the newer 'game manager message type'.
         val gamingMessages = newMessages.toMutableList()
         gamingMessages.removeAll(chatMessages)
