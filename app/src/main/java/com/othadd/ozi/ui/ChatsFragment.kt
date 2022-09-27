@@ -141,6 +141,11 @@ class ChatsFragment : Fragment() {
                 }
             }
         }
+
+        sharedViewModel.darkMode.observe(viewLifecycleOwner){
+            binding.darkModeToggleMenuItemTextView.text = if (it) "Light Mode" else "Dark Mode"
+        }
+
     }
 
     fun findUsers() {

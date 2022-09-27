@@ -102,6 +102,8 @@ class ChatViewModel(
 
     val shouldScrollChat: LiveData<Boolean> = settingsRepo.scrollFlow().asLiveData()
 
+    val darkMode: LiveData<Boolean> = settingsRepo.darkModeFlow().asLiveData()
+
     private val snackBarTimer = object : CountDownTimer(7000, 1000) {
         override fun onTick(millisUntilFinished: Long) {}
         override fun onFinish() {
@@ -380,6 +382,11 @@ class ChatViewModel(
 
     fun getGameRequestSenderId(): String {
         return MessagingRepoX.getGameRequestSenderId()
+    }
+
+    fun toggleDarkMode(){
+        val currentMode = darkMode.value
+        settingsRepo.updateDarkMode(!currentMode!!)
     }
 
 

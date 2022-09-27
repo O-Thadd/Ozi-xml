@@ -119,6 +119,17 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toBottomOf="@id/fragmentHeader_constrainLayout">
 
+            <View
+                android:id="@+id/viewHoldingBackgroundImage_view"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:background="@drawable/ozi_chat_background"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+
             <LinearLayout
                 android:id="@+id/emptyState_linearLayout"
                 android:layout_width="wrap_content"
@@ -146,15 +157,6 @@
 
             </LinearLayout>
 
-            <View
-                android:id="@+id/viewHoldingBackgroundImage_view"
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:background="@drawable/ozi_chat_background"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/messages_recyclerView"
@@ -216,15 +218,17 @@
                 android:alpha="0.0"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="12dp"
+                app:layout_constraintTop_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="parent">
+                >
 
                 <TextView
                     android:id="@+id/snackBarMessage_textView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="12dp"
+                    android:textColor="@color/text_colour"
                     android:text="@{viewModel.snackBarState.message}"
                     android:textSize="16sp"
                     tools:text="Mary has challenged you!" />
@@ -233,6 +237,7 @@
                     android:id="@+id/snackBarActionButton_textView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:textColor="@color/text_colour"
                     android:layout_marginEnd="12dp"
                     android:background="@drawable/bg_button_3"
                     android:onClick="@{() -> chatFragment.snackBarSwitchToGameRequestSenderChat()}"
@@ -247,7 +252,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:onClick="@{() -> viewModel.closeSnackBar()}"
-                    android:src="@drawable/ic_baseline_close_24" />
+                    android:src="@drawable/ic_baseline_close_24"
+                    app:tint="@color/text_colour" />
 
             </LinearLayout>
 
@@ -272,13 +278,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="40dp"
-            android:layout_marginEnd="40dp"
             android:alpha="0.0"
+            android:layout_marginEnd="40dp"
             android:background="@drawable/bg_dialog"
             android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="parent">
+            >
 
             <TextView
                 android:id="@+id/confirmGameRequest_textView"

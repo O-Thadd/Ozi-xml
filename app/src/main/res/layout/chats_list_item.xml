@@ -21,11 +21,11 @@
                 android:id="@+id/avi_imageView"
                 android:layout_width="45dp"
                 android:layout_height="45dp"
-                android:src="@drawable/male_profile_black"
+                android:src="@drawable/icon_female_avi"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                tools:src="@drawable/male_profile_black" />
+                tools:src="@drawable/icon_male_avi" />
 
             <TextView
                 android:id="@+id/chatMateUsername_textView"

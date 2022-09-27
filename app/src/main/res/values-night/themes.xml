@@ -12,13 +12,7 @@
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
-
-<!--        <item name="android:textColorPrimary">#ffe6e1e5</item>-->
-<!--        <item name="android:textColorPrimary">#ff1c1b1f</item>-->
-    </style>
-
-
-    <style name="Splash" parent="Theme.Ozi">
-        <item name="android:windowBackground">@drawable/ozi_splash_screen</item>
+        <item name="android:textColorPrimary">#ffe6e1e5</item>
+        <item name="android:textColorPrimaryInverse">#ff1c1b1f</item>
     </style>
 </resources>

@@ -24,6 +24,7 @@ class SettingsRepo(private val context: Context) {
     private val snackBarKey = stringPreferencesKey("snackBarKey")
     private val scrollKey = booleanPreferencesKey("scrollKey")
     private val markSentKey = booleanPreferencesKey("markSentKey")
+    private val darkModeKey = booleanPreferencesKey("darkModeKey")
 
     fun getUserId(): String {
 
@@ -46,9 +47,9 @@ class SettingsRepo(private val context: Context) {
     }
 
     fun username(): Flow<String> {
-            return context.dataStore.data.map {
-                it[usernameKey] ?: NO_USERNAME
-            }
+        return context.dataStore.data.map {
+            it[usernameKey] ?: NO_USERNAME
+        }
     }
 
     fun storeUsername(username: String) {
@@ -59,7 +60,7 @@ class SettingsRepo(private val context: Context) {
         }
     }
 
-    fun updateSnackBarState(snackBarState: SnackBarState){
+    fun updateSnackBarState(snackBarState: SnackBarState) {
         runBlocking {
             val snackBarString = snackBarToString(snackBarState)
             context.dataStore.edit {
@@ -74,7 +75,7 @@ class SettingsRepo(private val context: Context) {
         }
     }
 
-    fun updateScroll(scroll: Boolean){
+    fun updateScroll(scroll: Boolean) {
         runBlocking {
             context.dataStore.edit {
                 it[scrollKey] = scroll
@@ -87,7 +88,9 @@ class SettingsRepo(private val context: Context) {
             it[scrollKey] ?: false
         }
 
-    }fun updateMarkSent(update: Boolean){
+    }
+
+    fun updateMarkSent(update: Boolean) {
         runBlocking {
             context.dataStore.edit {
                 it[markSentKey] = update
@@ -101,4 +104,17 @@ class SettingsRepo(private val context: Context) {
         }
     }
 
+    fun updateDarkMode(update: Boolean) {
+        runBlocking {
+            context.dataStore.edit {
+                it[darkModeKey] = update
+            }
+        }
+    }
+
+    fun darkModeFlow(): Flow<Boolean> {
+        return context.dataStore.data.map {
+            it[darkModeKey] ?: false
+        }
+    }
 }

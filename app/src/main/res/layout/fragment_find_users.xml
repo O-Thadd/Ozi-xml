@@ -19,6 +19,7 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
+        android:background="@color/base_background_colour"
         android:layout_height="match_parent">
 
         <LinearLayout
@@ -74,7 +75,8 @@
                 android:id="@+id/loadingIcon_imageView"
                 android:layout_width="28dp"
                 android:layout_height="28dp"
-                android:src="@drawable/ic_busy" />
+                android:src="@drawable/ic_busy"
+                app:tint="@color/icon_tint_colour" />
 
             <TextView
                 android:id="@+id/fetching_textView"
@@ -120,7 +122,8 @@
                 android:visibility="invisible"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent"/>
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:tint="@color/icon_tint_colour" />
 
 
         </androidx.constraintlayout.widget.ConstraintLayout>
@@ -160,9 +163,10 @@
             android:onClick="@{() -> viewModel.getLatestUsers()}"
             android:padding="8dp"
             android:text="try again"
+            android:textColor="@color/text_colour"
             android:textSize="18sp"
-            android:textStyle="bold"
             android:visibility="gone"
+            android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/couldNotFetchUsers_textView" />
@@ -172,9 +176,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:alpha="0.0"
             android:background="@drawable/bg_snackbar"
             android:gravity="center"
+            android:alpha="0.0"
             android:paddingHorizontal="8dp"
             android:paddingVertical="12dp"
             app:layout_constraintTop_toBottomOf="parent"
@@ -186,6 +190,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="12dp"
+                android:textColor="@color/text_colour"
                 android:text="@{viewModel.snackBarState.message}"
                 android:textSize="16sp"
                 tools:text="Mary has challenged you!" />
@@ -195,6 +200,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="12dp"
+                android:textColor="@color/text_colour"
                 android:background="@drawable/bg_button_3"
                 android:onClick="@{() -> viewModel.goToGameRequestSenderChat()}"
                 android:paddingHorizontal="8dp"
@@ -208,7 +214,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:onClick="@{() -> viewModel.closeSnackBar()}"
-                android:src="@drawable/ic_baseline_close_24" />
+                android:src="@drawable/ic_baseline_close_24"
+                app:tint="@color/text_colour" />
 
         </LinearLayout>
 

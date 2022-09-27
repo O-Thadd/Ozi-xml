@@ -20,4 +20,7 @@
     <color name="grey">#C8C7C7</color>
     <color name="ozi_splash_screen_bg_color">#000616</color>
     <color name="ozi_green">#4BC417</color>
+    <color name="base_background_colour">#FFFFFF</color>
+    <color name="icon_tint_colour">#DFB169</color>
+    <color name="text_colour">#2E2E2E</color>
 </resources>

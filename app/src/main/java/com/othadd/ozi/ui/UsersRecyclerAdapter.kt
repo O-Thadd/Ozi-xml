@@ -53,8 +53,8 @@ class UsersRecyclerAdapter(private val onItemClick: (String) -> Unit) :
             binding.apply {
                 chatMateUsernameTextView.text = user.username
                 aviImageView.setImageResource(when(user.gender){
-                    MALE -> R.drawable.male_profile_black
-                    FEMALE -> R.drawable.female_profile_black
+                    MALE -> R.drawable.icon_male_avi
+                    FEMALE -> R.drawable.icon_female_avi
                     else -> R.drawable.ic_person_dark
                 })
                 onlineIndicatorImageView.visibility = if (user.onlineStatus) View.VISIBLE else View.GONE

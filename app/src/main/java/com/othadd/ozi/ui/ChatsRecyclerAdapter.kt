@@ -52,8 +52,8 @@ class ChatsRecyclerAdapter(private val onItemClick: (String) -> Unit) :
                 lastMessageTextView.text = chat.lastMessage
                 lastMessageTimeTextView.text = chat.lastMessageDateTime
                 aviImageView.setImageResource(when(chat.chatMateGender){
-                    MALE -> R.drawable.male_profile_black
-                    FEMALE -> R.drawable.female_profile_black
+                    MALE -> R.drawable.icon_male_avi
+                    FEMALE -> R.drawable.icon_female_avi
                     else -> R.drawable.ic_person_dark
                 })
                 unreadMessageIndicatorImageView.visibility = if (chat.hasUnreadMessage) View.VISIBLE else View.GONE
