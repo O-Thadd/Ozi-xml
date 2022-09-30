@@ -3,6 +3,7 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/drawable-mdpi/ic_busy_registeration.xml" value="0.1585" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/drawable-night/bg_button_1.xml" value="0.1755" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/drawable-night/bg_chat_fragment.xml" value="0.1755" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/drawable-night/bg_dialog.xml" value="0.1755" />
@@ -48,8 +49,8 @@
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/activity_main.xml" value="0.1675929884566054" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/activity_splash.xml" value="0.1675929884566054" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/chats_list_item.xml" value="0.33" />
-        <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_chat.xml" value="0.2" />
-        <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_chats.xml" value="0.2" />
+        <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_chat.xml" value="0.14" />
+        <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_chats.xml" value="0.12" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_developer.xml" value="0.18" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_find_users.xml" value="0.22" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_online_chat.xml" value="0.20416666666666666" />

@@ -30,7 +30,7 @@ class ChatViewModel(
     AndroidViewModel(application) {
 
     private val settingsRepo = SettingsRepo(getApplication())
-    var thisUserId: String = settingsRepo.getUserId()
+    val thisUserId: String = settingsRepo.getUserId()
     private fun getChatDao() = getApplication<OziApplication>().database.chatDao()
 
     val chats: LiveData<List<UIChat>> =
@@ -161,7 +161,7 @@ class ChatViewModel(
 
                         // do something with token
                         try {
-                            MessagingRepoX.registerUser(thisUserId, username, gender, token)
+                            MessagingRepoX.registerUser(settingsRepo.getUserId(), username, gender, token)
                             _registrationStatus.value = PASSED
                             settingsRepo.storeUsername(username)
                         } catch (e: Exception) {
@@ -400,6 +400,10 @@ class ChatViewModel(
                 Log.e("viewModel", "error refreshing user status. $e")
             }
         }
+    }
+
+    fun saveUserId(userId: String) {
+        settingsRepo.updateUserId(userId)
     }
 
 

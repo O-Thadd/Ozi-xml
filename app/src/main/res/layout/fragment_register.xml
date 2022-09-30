@@ -28,6 +28,7 @@
             android:id="@+id/imageView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="@color/black_transparent"
             android:scaleType="centerCrop"
             android:src="@drawable/ozi_landing_background"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -40,6 +41,7 @@
             android:id="@+id/register_textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:background="@color/black_transparent"
             android:fontFamily="@font/amaranth_bold"
             android:padding="8dp"
             android:text="It's a good way to spend idle time..."
@@ -47,7 +49,6 @@
             android:textSize="34sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@id/text2"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent" />
 
         <TextView
@@ -94,6 +95,39 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+
+        <EditText
+            android:id="@+id/userIdInput_editText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/white"
+            android:hint="userId"
+            android:visibility="invisible"
+            app:layout_constraintEnd_toStartOf="@id/storeUserId_button"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/storeUserId_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="@{() -> registerFragment.onStoreUserIdButtonPressed()}"
+            android:visibility="invisible"
+            android:text="store userid"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+
+        <ImageView
+            android:id="@+id/triggerButton_imageView"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/ic_circle"
+            android:onClick="@{() -> registerFragment.onTriggerButtonPressed()}"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/storeUserId_button"
+            app:tint="@color/received_message" />
 
 
         <include

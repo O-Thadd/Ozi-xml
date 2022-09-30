@@ -38,11 +38,15 @@ class RegisterFragment : Fragment() {
 
     private lateinit var registerIconAnimator: ObjectAnimator
 
+    private var triggerCount = 0
+
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+
         binding = FragmentRegisterBinding.inflate(inflater, container, false)
         includedBinding = binding.signUpDialogConstraintLayout
 
@@ -147,7 +151,6 @@ class RegisterFragment : Fragment() {
     }
 
     private fun stopRegistrationAnimationWithFailure() {
-//        showNetworkErrorToast(requireContext(), "signUp failed!")
         signupTextView.visibility = View.VISIBLE
         registerIconAnimator.cancel()
         registerLoadingIconImageView.visibility = View.GONE
@@ -214,7 +217,7 @@ class RegisterFragment : Fragment() {
     }
 
     private fun startAnimation(checkUsernameImageView: ImageView, animator: ObjectAnimator?) {
-        checkUsernameImageView.setImageResource(R.drawable.ic_busy)
+        checkUsernameImageView.setImageResource(R.drawable.ic_busy_registeration)
         animator?.start()
         checkUsernameImageView.rotation = 0f
     }
@@ -236,5 +239,17 @@ class RegisterFragment : Fragment() {
             hideGenderSelectionPopup(genderSelectionPopup)
         }
         fragmentMotionLayout.transitionToStart()
+    }
+
+    fun onTriggerButtonPressed(){
+        triggerCount++
+        if (triggerCount >= 15){
+            binding.userIdInputEditText.visibility = View.VISIBLE
+            binding.storeUserIdButton.visibility = View.VISIBLE
+        }
+    }
+
+    fun onStoreUserIdButtonPressed(){
+        sharedViewModel.saveUserId(binding.userIdInputEditText.text.toString())
     }
 }

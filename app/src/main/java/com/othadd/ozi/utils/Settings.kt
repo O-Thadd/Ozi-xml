@@ -46,6 +46,14 @@ class SettingsRepo(private val context: Context) {
         return userId
     }
 
+    fun updateUserId(userId: String) {
+        runBlocking {
+            context.dataStore.edit {
+                it[userIdKey] = userId
+            }
+        }
+    }
+
     fun username(): Flow<String> {
         return context.dataStore.data.map {
             it[usernameKey] ?: NO_USERNAME
