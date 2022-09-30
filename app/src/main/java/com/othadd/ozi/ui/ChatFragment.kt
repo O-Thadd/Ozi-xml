@@ -87,11 +87,11 @@ class ChatFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-//        scrollOnFragmentResume()
         sharedViewModel.refreshMessages("Could not refresh messages")
         sharedViewModel.resetNavigateChatsToChatFragment()
         sharedViewModel.markMessagesRead()
         sharedViewModel.resetChatStartedByActivity()
+        sharedViewModel.refreshUserStatus()
 
         if (chatFragmentWasClosed) {
             chatFragmentWasClosed = false
@@ -227,10 +227,6 @@ class ChatFragment : Fragment() {
 
     private fun showSnackBar() {
 
-//        if (snackBarIsShowing) {
-//            hideSnackBar()
-//        }
-
         val moveTypeMessageGroupUpAnimator =
             ObjectAnimator.ofFloat(
                 typeMessageEditTextGroup,
@@ -252,9 +248,6 @@ class ChatFragment : Fragment() {
     }
 
     private fun hideSnackBar() {
-//        if (!snackBarIsShowing) {
-//            return
-//        }
 
         val moveTypeMessageGroupDownAnimator =
             ObjectAnimator.ofFloat(typeMessageEditTextGroup, View.TRANSLATION_Y, 0f)

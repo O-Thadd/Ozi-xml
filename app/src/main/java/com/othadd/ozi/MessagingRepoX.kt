@@ -21,8 +21,7 @@ object MessagingRepoX {
         senderId: String,
         receiverId: String,
         messageBody: String,
-        application: OziApplication,
-        thisUserId: String
+        application: OziApplication
     ) {
         val newMessage =
             Message(senderId, receiverId, messageBody, Calendar.getInstance().timeInMillis)
@@ -33,13 +32,12 @@ object MessagingRepoX {
         newMessage.messagePackage = packageString
 
         saveOutGoingMessage(application, newMessage)
-        scheduleMessageForSendToServer(newMessage, application, thisUserId)
+        scheduleMessageForSendToServer(newMessage, application)
     }
 
     private fun scheduleMessageForSendToServer(
         newMessage: Message,
-        application: OziApplication,
-        thisUserId: String
+        application: OziApplication
     ) {
         val newMessageString = messageToString(newMessage)
         val workManager = WorkManager.getInstance(application)
@@ -149,7 +147,7 @@ object MessagingRepoX {
         application: OziApplication
     ) {
 
-//        handle regular chat messages
+        // handle regular chat messages
         val chatMessages = newMessages.filter { it.type == CHAT_MESSAGE_TYPE }
         for (message in chatMessages) {
 
@@ -234,6 +232,14 @@ object MessagingRepoX {
 
     private fun getPackageFromMessage(message: Message): MessagePackage {
         return stringToMessagePackage(message.messagePackage)
+    }
+
+    suspend fun refreshUser(userId: String, chatDao: ChatDao) {
+        val user = NetworkApi.retrofitService.getUser(userId)
+        val dbChat = getChat(userId, chatDao)!!
+        dbChat.verificationStatus = user.verificationStatus
+        dbChat.onlineStatus = user.onlineStatus
+        chatDao.update(dbChat)
     }
 
 }

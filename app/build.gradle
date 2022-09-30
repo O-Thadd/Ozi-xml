@@ -97,4 +97,7 @@ dependencies {
     // Kotlin + coroutines
     implementation "androidx.work:work-runtime-ktx:$work_version"
 
+    // Splash screen
+    implementation 'androidx.core:core-splashscreen:1.0.0'
+
 }

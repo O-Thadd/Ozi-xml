@@ -12,7 +12,7 @@ const val GAME_REQUEST_NOTIFICATION_ID = 2
 
 fun NotificationManager.sendNewMessageNotification(messageBody: String, context: Context){
     val builder = NotificationCompat.Builder(context, context.getString(R.string.new_message_notification_channel_id))
-        .setSmallIcon(R.drawable.notification_image)
+        .setSmallIcon(R.drawable.ozi_icon_black_thick)
         .setContentTitle("New Message!")
         .setContentText(messageBody)
 
@@ -21,7 +21,7 @@ fun NotificationManager.sendNewMessageNotification(messageBody: String, context:
 
 fun NotificationManager.sendGameRequestNotification(messageBody: String, context: Context){
     val builder = NotificationCompat.Builder(context, GAME_REQUEST_NOTIFICATION_CHANNEL_ID)
-        .setSmallIcon(R.drawable.notification_image)
+        .setSmallIcon(R.drawable.ozi_icon_black_thick)
         .setContentTitle("New Game Request!")
         .setContentText(messageBody)
 

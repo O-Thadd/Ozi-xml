@@ -6,8 +6,6 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.*
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
 import com.google.firebase.messaging.FirebaseMessaging
 import com.othadd.ozi.MessagingRepoX
 import com.othadd.ozi.OziApplication
@@ -42,6 +40,7 @@ class ChatViewModel(
 
     private var _chat = MutableLiveData<DBChat>()
     val chat: LiveData<DBChat> get() = _chat
+    private lateinit var currentChatChatMateId: String
 
     val userIsRegistered = Transformations.map(settingsRepo.username().asLiveData()) {
         it != NO_USERNAME
@@ -133,8 +132,7 @@ class ChatViewModel(
                 senderId,
                 receiverId,
                 messageBody,
-                getApplication(),
-                thisUserId
+                getApplication()
             )
         }
     }
@@ -184,6 +182,7 @@ class ChatViewModel(
 
     fun startChat(userId: String) {
         viewModelScope.launch {
+            currentChatChatMateId = userId
             closeSnackBar()
 
             val chats = getChatDao().getChats().first()
@@ -207,6 +206,10 @@ class ChatViewModel(
             MessagingRepoX.setChat(chat)
 
             _navigateToChatFragment.value = true
+        }
+
+        viewModelScope.launch {
+//            refreshUserStatus(userId)
         }
     }
 
@@ -387,6 +390,16 @@ class ChatViewModel(
     fun toggleDarkMode(){
         val currentMode = darkMode.value
         settingsRepo.updateDarkMode(!currentMode!!)
+    }
+
+    fun refreshUserStatus(userId: String = currentChatChatMateId) {
+        viewModelScope.launch {
+            try {
+                MessagingRepoX.refreshUser(userId, getChatDao())
+            } catch (e: Exception) {
+                Log.e("viewModel", "error refreshing user status. $e")
+            }
+        }
     }
 
 

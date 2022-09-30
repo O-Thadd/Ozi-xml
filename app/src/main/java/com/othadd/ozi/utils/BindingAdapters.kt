@@ -33,14 +33,3 @@ fun bindLightGender(imageView: ImageView, gender: String?) {
         }
     )
 }
-
-@BindingAdapter("darkGender")
-fun bindDarkGender(imageView: ImageView, gender: String?) {
-    imageView.setImageResource(
-        when (gender) {
-            MALE -> R.drawable.male_profile_black
-            FEMALE -> R.drawable.female_profile_black
-            else -> R.drawable.ic_person_dark
-        }
-    )
-}
