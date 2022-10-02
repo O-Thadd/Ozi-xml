@@ -35,23 +35,23 @@ object GameManager {
         override fun onFinish() {
             runBlocking {
 
-                try {
-                    val message1 = waitingMessagesList[0]
-                    val messagePackage1 = getPackageFromMessage(waitingMessagesList[0].toMessage())
-                    val roundSummary1 = getRoundSummaryFromNWMessage(waitingMessagesList[0])
-                    val message2 = waitingMessagesList[1]
-                    val messagePackage2 = getPackageFromMessage(waitingMessagesList[1].toMessage())
-                    val roundSummary2 = getRoundSummaryFromNWMessage(waitingMessagesList[1])
-                    Log.e("cxonflict Resolution", "message1: $message1")
-                    Log.e("cxonflict Resolution", "message2: $message2")
-                    Log.e("cxonflict Resolution", "messagePackage1 contentDesc: ${messagePackage1.contentDesc}")
-                    Log.e("cxonflict Resolution", "messagePackage2 contentDesc: ${messagePackage2.contentDesc}")
-                    Log.e("cxonflict Resolution", "roundSummary1 answerTime: ${roundSummary1.answerTime}. currentWord: ${roundSummary1.currentWord}")
-                    Log.e("cxonflict Resolution", "roundSummary2 answerTime: ${roundSummary2.answerTime}. currentWord: ${roundSummary2.currentWord}")
-                }
-                catch (e: Exception){
-                    Log.e("cxonflict Resolution", e.toString())
-                }
+//                try {
+//                    val message1 = waitingMessagesList[0]
+//                    val messagePackage1 = getPackageFromMessage(waitingMessagesList[0].toMessage())
+//                    val roundSummary1 = getRoundSummaryFromNWMessage(waitingMessagesList[0])
+//                    val message2 = waitingMessagesList[1]
+//                    val messagePackage2 = getPackageFromMessage(waitingMessagesList[1].toMessage())
+//                    val roundSummary2 = getRoundSummaryFromNWMessage(waitingMessagesList[1])
+////                    Log.e("cxonflict Resolution", "message1: $message1")
+////                    Log.e("cxonflict Resolution", "message2: $message2")
+////                    Log.e("cxonflict Resolution", "messagePackage1 contentDesc: ${messagePackage1.contentDesc}")
+////                    Log.e("cxonflict Resolution", "messagePackage2 contentDesc: ${messagePackage2.contentDesc}")
+////                    Log.e("cxonflict Resolution", "roundSummary1 answerTime: ${roundSummary1.answerTime}. currentWord: ${roundSummary1.currentWord}")
+////                    Log.e("cxonflict Resolution", "roundSummary2 answerTime: ${roundSummary2.answerTime}. currentWord: ${roundSummary2.currentWord}")
+//                }
+//                catch (e: Exception){
+//                    Log.e("cxonflict Resolution", e.toString())
+//                }
 
                 Log.e("conflict Resolution", "timer ended. waiting list size: ${waitingMessagesList.size}")
                 resolveConflictIfAny(oziApplication!!)
@@ -119,19 +119,28 @@ object GameManager {
 
         for (message in messages) {
             var messagePackage: MessagePackage? = null
-            var sendMessageRightAway: Boolean
-            var carryingGameModeratorId = false
+            var sendMessage = true
+
+            var containsRoundSummary = false
+            var containsGameModeratorId = false
+            var containsInstructions = false
 
             try {
                 messagePackage = getPackageFromMessage(message.toMessage())
-            } catch (e: Exception) {
-            }
+            } catch (e: Exception) { }
+
+
             if (messagePackage != null) {
+
+
                 if (messagePackage.gameModeratorId != NOT_INITIALIZED) {
+                    containsGameModeratorId = true
                     gameModeratorId = messagePackage.gameModeratorId
+                    SettingsRepo(application).updateKeyboardMode(true)
                 }
 
                 if (messagePackage.roundSummary != NOT_INITIALIZED) {
+                    containsRoundSummary = true
                     waitingMessagesList.add(message)
                     Log.e("conflict Resolution", "added message to waiting list")
                     Log.e("conflict Resolution", message.body)
@@ -142,13 +151,22 @@ object GameManager {
                         conflictTimer.start()
                         Log.e("conflict Resolution", "conflict timer restarted")
                     }
-                    sendMessageRightAway = false
-                } else {
-                    sendMessageRightAway = true
                 }
-                carryingGameModeratorId = messagePackage.contentDesc == CARRYING_GAME_MODERATOR_ID_CONTENT_DESC
-            } else {
-                sendMessageRightAway = true
+
+
+                if (messagePackage.instructions != NOT_INITIALIZED){
+                    containsInstructions = true
+                    val instructions = stringToInstructions(messagePackage.instructions)
+                    for (instruction in instructions){
+                        when(instruction){
+                            DISABLE_GAME_MODE_KEYBOARD_INSTRUCTION -> SettingsRepo(application).updateKeyboardMode(false)
+                        }
+                    }
+                }
+
+
+                sendMessage = !(containsGameModeratorId || containsInstructions || containsRoundSummary)
+
             }
 
 
@@ -217,7 +235,7 @@ object GameManager {
                 }
 
                 else -> {
-                    if (sendMessageRightAway && !carryingGameModeratorId) {
+                    if (sendMessage) {
                         MessagingRepoX.saveIncomingMessage(application, message.toMessage())
                     }
                 }

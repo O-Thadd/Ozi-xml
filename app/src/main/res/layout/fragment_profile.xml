@@ -3,7 +3,7 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context=".ProfileFragment">
+    tools:context=".ui.ProfileFragment">
 
     <data>
 
@@ -13,7 +13,7 @@
 
         <variable
             name="profileFragment"
-            type="com.othadd.ozi.ProfileFragment" />
+            type="com.othadd.ozi.ui.ProfileFragment" />
 
     </data>
 

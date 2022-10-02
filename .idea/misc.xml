@@ -46,10 +46,11 @@
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/drawable/ozi_splash_screen_layerlist.xml" value="0.1755" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/font/.xml" value="0.234375" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/font/bigshot_one.xml" value="0.1923899102180419" />
+        <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout-keysexposed/fragment_chat.xml" value="0.1675213675213675" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/activity_main.xml" value="0.1675929884566054" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/activity_splash.xml" value="0.1675929884566054" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/chats_list_item.xml" value="0.33" />
-        <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_chat.xml" value="0.14" />
+        <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_chat.xml" value="0.2" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_chats.xml" value="0.12" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_developer.xml" value="0.18" />
         <entry key="..\:/Users/thadd/AndroidStudioProjects/Ozi/app/src/main/res/layout/fragment_find_users.xml" value="0.22" />

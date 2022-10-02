@@ -1,4 +1,4 @@
-package com.othadd.ozi
+package com.othadd.ozi.ui
 
 import android.animation.ObjectAnimator
 import android.os.Bundle
@@ -11,11 +11,9 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.activityViewModels
-import androidx.recyclerview.widget.RecyclerView
-import com.othadd.ozi.databinding.FragmentChatBinding
+import com.othadd.ozi.OziApplication
 import com.othadd.ozi.databinding.FragmentProfileBinding
 import com.othadd.ozi.network.MALE
-import com.othadd.ozi.ui.*
 
 class ProfileFragment : Fragment() {
 

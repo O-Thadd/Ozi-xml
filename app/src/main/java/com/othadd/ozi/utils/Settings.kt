@@ -25,6 +25,7 @@ class SettingsRepo(private val context: Context) {
     private val scrollKey = booleanPreferencesKey("scrollKey")
     private val markSentKey = booleanPreferencesKey("markSentKey")
     private val darkModeKey = booleanPreferencesKey("darkModeKey")
+    private val gameModeKeyboardKey = booleanPreferencesKey("gameModeKeyboardKey")
 
     fun getUserId(): String {
 
@@ -123,6 +124,20 @@ class SettingsRepo(private val context: Context) {
     fun darkModeFlow(): Flow<Boolean> {
         return context.dataStore.data.map {
             it[darkModeKey] ?: false
+        }
+    }
+
+    fun updateKeyboardMode(update: Boolean) {
+        runBlocking {
+            context.dataStore.edit {
+                it[gameModeKeyboardKey] = update
+            }
+        }
+    }
+
+    fun keyBoardModeFlow(): Flow<Boolean> {
+        return context.dataStore.data.map {
+            it[gameModeKeyboardKey] ?: false
         }
     }
 }

@@ -63,7 +63,7 @@
     </fragment>
     <fragment
         android:id="@+id/profileFragment"
-        android:name="com.othadd.ozi.ProfileFragment"
+        android:name="com.othadd.ozi.ui.ProfileFragment"
         android:label="fragment_profile"
         tools:layout="@layout/fragment_profile" >
         <action

@@ -12,6 +12,7 @@ import com.othadd.ozi.OziApplication
 import com.othadd.ozi.database.DBChat
 import com.othadd.ozi.database.getNoDialogDialogType
 import com.othadd.ozi.database.toUIChat
+import com.othadd.ozi.network.CURRENTLY_PLAYING_GAME_STATE
 import com.othadd.ozi.network.NetworkApi
 import com.othadd.ozi.network.User
 import com.othadd.ozi.utils.*
@@ -113,18 +114,8 @@ class ChatViewModel(
     private var _profile = MutableLiveData<User>()
     val profile: LiveData<User> get() = _profile
 
+    val shouldEnableGameModeKeyboard: LiveData<Boolean> = settingsRepo.keyBoardModeFlow().asLiveData()
 
-    fun chatHasNewMessage(userId: String, messagesSize: Int): Boolean {
-        val chatAndMessagesSize = chatsAndMessagesSize.find { it.userId == userId }
-        if (chatAndMessagesSize == null) {
-            chatsAndMessagesSize.add(ChatAndMessagesSize(userId, messagesSize))
-            return true
-        }
-
-        val chatHasNewMessage = chatAndMessagesSize.messagesSize != messagesSize
-        chatAndMessagesSize.messagesSize = messagesSize
-        return chatHasNewMessage
-    }
 
     fun sendMessage(messageBody: String, receiverId: String, senderId: String = thisUserId) {
         viewModelScope.launch {
@@ -399,6 +390,11 @@ class ChatViewModel(
             } catch (e: Exception) {
                 Log.e("viewModel", "error refreshing user status. $e")
             }
+        }
+
+        viewModelScope.launch {
+            val user = NetworkApi.retrofitService.getUser(currentChatChatMateId)
+            settingsRepo.updateKeyboardMode(user.gameState == CURRENTLY_PLAYING_GAME_STATE)
         }
     }
 

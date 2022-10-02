@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.OvershootInterpolator
 import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -48,6 +49,8 @@ class ChatFragment : Fragment() {
     private lateinit var snackBarCloseButton: ImageView
     private lateinit var messagesRecyclerView: RecyclerView
     private lateinit var typeMessageEditTextGroup: ConstraintLayout
+    private lateinit var newMessageGameModeEditText: EditText
+    private lateinit var newMessageEditText: EditText
 
     private var snackBarIsShowing = false
     private var chatSwitchBySnackBar = false
@@ -55,6 +58,8 @@ class ChatFragment : Fragment() {
     private lateinit var backPressedCallback: OnBackPressedCallback
     private lateinit var chatMateUserId: String
     private var snackBarHeight: Float = 0f
+
+    private var gameModeKeyboardEnabled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -117,6 +122,8 @@ class ChatFragment : Fragment() {
         snackBarCloseButton = binding.closeSnackBarButtonImageView
         typeMessageEditTextGroup = binding.bottomConstraintLayout
         snackBarHeight = snackBar.height.toFloat()
+        newMessageGameModeEditText = binding.newMessageGameModeEditText
+        newMessageEditText = binding.newMessageEditText
 
         sharedViewModel.chat.observe(viewLifecycleOwner) { dbChat ->
             val messages = dbChat.messages.sortedBy { it.dateTime }
@@ -135,10 +142,6 @@ class ChatFragment : Fragment() {
                 messagesRecyclerView.visibility = View.VISIBLE
                 binding.emptyStateLinearLayout.visibility = View.GONE
             }
-
-//            Handler(Looper.getMainLooper()).postDelayed({
-//                    doAppropriateScrolling(dbChat.chatMateId, dbChat.messages.size)
-//            }, 50)
         }
 
         sharedViewModel.markAllMessagesSent.observe(viewLifecycleOwner) {
@@ -223,6 +226,10 @@ class ChatFragment : Fragment() {
             }
         }
 
+        sharedViewModel.shouldEnableGameModeKeyboard.observe(viewLifecycleOwner){
+            if (it) enableGameModeKeyboard() else disableGameModeKeyboard()
+        }
+
     }
 
     private fun showSnackBar() {
@@ -293,24 +300,18 @@ class ChatFragment : Fragment() {
     }
 
     fun sendMessage() {
-        if (!binding.newMessageEditText.text.isNullOrBlank()) {
-            sharedViewModel.sendMessage(binding.newMessageEditText.text.toString(), chatMateUserId)
-            binding.newMessageEditText.text?.clear()
+        if (!gameModeKeyboardEnabled){
+            if (!binding.newMessageEditText.text.isNullOrBlank()) {
+                sharedViewModel.sendMessage(binding.newMessageEditText.text.toString(), chatMateUserId)
+                binding.newMessageEditText.text?.clear()
+            }
         }
-    }
 
-    private fun doAppropriateScrolling(userId: String, messagesSize: Int) {
-
-//        chatHasNewMessage method also returns true if the check is occurring for the 1st time for the chat
-        val theNumberOfMessagesAboveWhichSmoothScrollingStopsLookingCool = 45
-
-        if (sharedViewModel.chatHasNewMessage(
-                userId,
-                messagesSize
-            ) && messagesSize < theNumberOfMessagesAboveWhichSmoothScrollingStopsLookingCool
-        ) {
-            smoothScrollToRecyclerBottom()
-            return
+        if (gameModeKeyboardEnabled){
+            if (!binding.newMessageGameModeEditText.text.isNullOrBlank()) {
+                sharedViewModel.sendMessage(binding.newMessageGameModeEditText.text.toString(), chatMateUserId)
+                binding.newMessageGameModeEditText.text?.clear()
+            }
         }
     }
 
@@ -409,5 +410,34 @@ class ChatFragment : Fragment() {
     fun snackBarSwitchToGameRequestSenderChat() {
         chatSwitchBySnackBar = true
         sharedViewModel.snackBarNavigateToChatFromChatFragment()
+    }
+
+    private fun enableGameModeKeyboard(){
+        if (gameModeKeyboardEnabled){
+            return
+        }
+
+        clearTexts()
+        hideKeyboard()
+        newMessageGameModeEditText.visibility = View.VISIBLE
+        newMessageEditText.visibility = View.GONE
+        gameModeKeyboardEnabled = true
+    }
+
+    private fun disableGameModeKeyboard(){
+        if (!gameModeKeyboardEnabled){
+            return
+        }
+
+        clearTexts()
+        hideKeyboard()
+        newMessageEditText.visibility = View.VISIBLE
+        newMessageGameModeEditText.visibility = View.GONE
+        gameModeKeyboardEnabled = false
+    }
+
+    private fun clearTexts(){
+        newMessageEditText.text.clear()
+        newMessageGameModeEditText.text.clear()
     }
 }

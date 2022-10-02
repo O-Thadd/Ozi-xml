@@ -114,8 +114,8 @@
             android:layout_height="0dp"
             android:layout_marginTop="16dp"
             android:background="@drawable/bg_chat_fragment"
-            android:paddingTop="16dp"
             android:paddingHorizontal="16dp"
+            android:paddingTop="16dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toBottomOf="@id/fragmentHeader_constrainLayout">
 
@@ -176,9 +176,9 @@
                 android:id="@+id/bottom_constraintLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
                 android:background="@drawable/bg_edittext"
                 android:padding="8dp"
-                android:layout_marginBottom="4dp"
                 app:layout_constraintBottom_toTopOf="@id/snackBar_linearLayout"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent">
@@ -192,6 +192,21 @@
                     android:background="@android:color/transparent"
                     android:hint="type message"
                     android:inputType="textAutoCorrect|textMultiLine|textCapSentences|textImeMultiLine"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/send_button"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <EditText
+                    android:id="@+id/newMessageGameMode_EditText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@android:color/transparent"
+                    android:hint="type message"
+                    android:inputType="textVisiblePassword|textPassword"
+                    android:visibility="gone"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toStartOf="@id/send_button"
                     app:layout_constraintStart_toStartOf="parent"
@@ -213,23 +228,22 @@
                 android:id="@+id/snackBar_linearLayout"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:alpha="0.0"
                 android:background="@drawable/bg_snackbar"
                 android:gravity="center"
-                android:alpha="0.0"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="12dp"
-                app:layout_constraintTop_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                >
+                app:layout_constraintTop_toBottomOf="parent">
 
                 <TextView
                     android:id="@+id/snackBarMessage_textView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="12dp"
-                    android:textColor="@color/text_colour"
                     android:text="@{viewModel.snackBarState.message}"
+                    android:textColor="@color/text_colour"
                     android:textSize="16sp"
                     tools:text="Mary has challenged you!" />
 
@@ -237,13 +251,13 @@
                     android:id="@+id/snackBarActionButton_textView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/text_colour"
                     android:layout_marginEnd="12dp"
                     android:background="@drawable/bg_button_3"
                     android:onClick="@{() -> chatFragment.snackBarSwitchToGameRequestSenderChat()}"
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="8dp"
                     android:text="@{viewModel.snackBarState.actionButtonText}"
+                    android:textColor="@color/text_colour"
                     android:textStyle="bold"
                     tools:text="Go to chat" />
 
@@ -278,14 +292,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="40dp"
-            android:alpha="0.0"
             android:layout_marginEnd="40dp"
+            android:alpha="0.0"
             android:background="@drawable/bg_dialog"
             android:padding="16dp"
-            app:layout_constraintTop_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            >
+            app:layout_constraintTop_toBottomOf="parent">
 
             <TextView
                 android:id="@+id/confirmGameRequest_textView"
