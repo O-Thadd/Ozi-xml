@@ -18,7 +18,7 @@ const val FINISH_COUNTDOWN_STAGE = "finish"
 class OziCountDownTimer(
     val userId: String,
     val application: OziApplication,
-    val onCountDownFinish: (OziCountDownTimer, String) -> Unit
+    val onCountDownFinish: (OziCountDownTimer, userId: String, timerType: String) -> Unit
 ) {
 
     private var timer: CountDownTimer? = null
@@ -85,7 +85,7 @@ class OziCountDownTimer(
                 runBlocking {
                     val dialogState = getDialog(0, FINISH_COUNTDOWN_STAGE)
                     updateDialogState(dialogState)
-                    onCountDownFinish(this@OziCountDownTimer, userId)
+                    onCountDownFinish(this@OziCountDownTimer, userId, type)
                 }
             }
         }.start()
