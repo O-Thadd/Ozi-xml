@@ -129,8 +129,10 @@ class RegisterFragment : Fragment() {
         }
 
         usernameEditText.addTextChangedListener{
-            resetAnimation(checkUsernameImageView, usernameCheckAnimator)
-            sharedViewModel.resetSignUpConditionsMet()
+//            resetAnimation(checkUsernameImageView, usernameCheckAnimator)
+//            sharedViewModel.resetSignUpConditionsMet()
+
+            checkUsername()
         }
 
         sharedViewModel.registrationStatus.observe(viewLifecycleOwner){
