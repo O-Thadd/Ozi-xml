@@ -126,7 +126,7 @@
             android:gravity="center"
             android:orientation="vertical"
             android:padding="8dp"
-            android:visibility="gone"
+            android:visibility="invisible"
             app:layout_constraintBottom_toBottomOf="@id/gender_textView"
             app:layout_constraintEnd_toEndOf="@id/gender_textView"
             app:layout_constraintStart_toStartOf="@id/gender_textView"

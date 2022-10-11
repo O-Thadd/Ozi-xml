@@ -64,7 +64,7 @@ class RegisterFragment : Fragment() {
 
         sharedViewModel.userIsRegistered.observe(viewLifecycleOwner) {
             if (it) {
-                findNavController().navigate(RegisterFragmentDirections.actionRegisterFragmentToChatsFragment())
+//                findNavController().navigate(RegisterFragmentDirections.actionRegisterFragmentToChatsFragment())
             }
         }
 
@@ -129,9 +129,6 @@ class RegisterFragment : Fragment() {
         }
 
         usernameEditText.addTextChangedListener{
-//            resetAnimation(checkUsernameImageView, usernameCheckAnimator)
-//            sharedViewModel.resetSignUpConditionsMet()
-
             checkUsername()
         }
 
@@ -168,7 +165,7 @@ class RegisterFragment : Fragment() {
         usernameEditText.isEnabled = false
         genderSelectionMiniDialog.visibility = View.VISIBLE
 
-        val moveUpPropertyValueHolder = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 150f)
+        val moveUpPropertyValueHolder = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, genderSelectionMiniDialog.height.toFloat(),  0f)
         val appearPropertyValuesHolder = PropertyValuesHolder.ofFloat(View.ALPHA, 1.0f)
         val showGenderSelectionAnimator = ObjectAnimator.ofPropertyValuesHolder(
             genderSelectionMiniDialog,
@@ -183,7 +180,7 @@ class RegisterFragment : Fragment() {
         usernameEditText.isEnabled = true
         genderSelectionMiniDialog.visibility = View.GONE
 
-        val movePropertyValueHolder = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, -150f)
+        val movePropertyValueHolder = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 0f, genderSelectionMiniDialog.height.toFloat())
         val alphaPropertyValuesHolder = PropertyValuesHolder.ofFloat(View.ALPHA, 0.0f)
         val hideGenderSelectionAnimator = ObjectAnimator.ofPropertyValuesHolder(
             genderSelectionMiniDialog,
