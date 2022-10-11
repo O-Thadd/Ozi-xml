@@ -10,12 +10,17 @@ import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.othadd.ozi.OziApplication
 import com.othadd.ozi.R
 import com.othadd.ozi.network.NetworkApi
 import com.othadd.ozi.network.USER_OFFLINE
 import com.othadd.ozi.network.USER_ONLINE
 import com.othadd.ozi.utils.SettingsRepo
+import com.othadd.ozi.utils.WORKER_STATUS_UPDATE_KEY
+import com.othadd.ozi.workers.UpdateStatusWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -60,32 +65,24 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        val scope = CoroutineScope(Job() + Dispatchers.Main)
-        scope.launch {
-            try {
-                NetworkApi.retrofitService.updateStatus(SettingsRepo(this@MainActivity).getUserId(), USER_ONLINE)
-            }
-            catch (e: Exception){
-                Log.e("mainActivity", "exception updating user online. $e")
-            }
-
-        }
+        scheduleStatusUpdate(USER_ONLINE)
     }
 
     override fun onStop() {
         super.onStop()
-        val scope = CoroutineScope(Job() + Dispatchers.Main)
-        scope.launch {
-            try {
-                NetworkApi.retrofitService.updateStatus(SettingsRepo(this@MainActivity).getUserId(), USER_OFFLINE)
-            }
-            catch (e: Exception){
-                Log.e("mainActivity", "exception updating user online. $e")
-            }
-        }
+        scheduleStatusUpdate(USER_OFFLINE)
     }
 
     override fun onSupportNavigateUp(): Boolean {
         return navController.navigateUp() || super.onSupportNavigateUp()
+    }
+
+    private fun scheduleStatusUpdate(update: String){
+        val workManager = WorkManager.getInstance(this)
+        val workRequest = OneTimeWorkRequestBuilder<UpdateStatusWorker>()
+            .setInputData(workDataOf(WORKER_STATUS_UPDATE_KEY to update))
+            .build()
+
+        workManager.enqueue(workRequest)
     }
 }

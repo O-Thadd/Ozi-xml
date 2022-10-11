@@ -27,7 +27,7 @@ object MessagingRepoX {
             Message(senderId, receiverId, messageBody, Calendar.getInstance().timeInMillis)
 
         val messagePackage = MessagePackage()
-        messagePackage.gameModeratorId = getGameModeratorId()
+        messagePackage.gameModeratorId = getGameModeratorId(application)
         val packageString = messagePackageToString(messagePackage)
         newMessage.messagePackage = packageString
 
@@ -226,8 +226,8 @@ object MessagingRepoX {
         return GameManager.getGameRequestSenderId()
     }
 
-    private fun getGameModeratorId(): String {
-        return GameManager.getGameModeratorId()
+    private fun getGameModeratorId(application: OziApplication): String {
+        return GameManager.getGameModeratorId(application)
     }
 
     private fun getPackageFromMessage(message: Message): MessagePackage {

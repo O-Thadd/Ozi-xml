@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.othadd.ozi.NOT_INITIALIZED
+import com.othadd.ozi.gaming.DUMMY_STRING
 import com.othadd.ozi.ui.SnackBarState
 import com.othadd.ozi.ui.dataStore
 import com.othadd.ozi.ui.getNoSnackBarSnackBar
@@ -26,6 +28,7 @@ class SettingsRepo(private val context: Context) {
     private val markSentKey = booleanPreferencesKey("markSentKey")
     private val darkModeKey = booleanPreferencesKey("darkModeKey")
     private val gameModeKeyboardKey = booleanPreferencesKey("gameModeKeyboardKey")
+    private val gameModeratorIdKey = stringPreferencesKey("gameModeratorIdKey")
 
     fun getUserId(): String {
 
@@ -138,6 +141,22 @@ class SettingsRepo(private val context: Context) {
     fun keyBoardModeFlow(): Flow<Boolean> {
         return context.dataStore.data.map {
             it[gameModeKeyboardKey] ?: false
+        }
+    }
+
+    fun updateGameModeratorId(newId: String) {
+        runBlocking {
+            context.dataStore.edit {
+                it[gameModeratorIdKey] = newId
+            }
+        }
+    }
+
+    fun getGameModeratorId(): String {
+        return runBlocking {
+            context.dataStore.data.map {
+                it[gameModeratorIdKey] ?: DUMMY_STRING
+            }.first()
         }
     }
 }

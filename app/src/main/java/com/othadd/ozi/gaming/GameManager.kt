@@ -127,8 +127,10 @@ object GameManager {
 
                 if (messagePackage.gameModeratorId != NOT_INITIALIZED) {
                     containsGameModeratorId = true
-                    gameModeratorId = messagePackage.gameModeratorId
-                    SettingsRepo(application).updateKeyboardMode(true)
+                    SettingsRepo(application).apply {
+                        updateGameModeratorId(messagePackage.gameModeratorId)
+                        updateKeyboardMode(true)
+                    }
                 }
 
                 if (messagePackage.roundSummary != NOT_INITIALIZED) {
@@ -271,7 +273,7 @@ object GameManager {
         val resolvedRoundSummary = getRoundSummaryFromNWMessage(resolvedMessage1)
         val roundSummaryToSendToServerStringX = roundSummaryToString(resolvedRoundSummary)
         NetworkApi.retrofitService.resolveGameConflict(
-            gameModeratorId,
+            SettingsRepo(application).getGameModeratorId(),
             roundSummaryToSendToServerStringX
         )
 
@@ -439,8 +441,8 @@ object GameManager {
         return gameRequestSenderId
     }
 
-    fun getGameModeratorId(): String {
-        return gameModeratorId
+    fun getGameModeratorId(application: OziApplication): String {
+        return SettingsRepo(application).getGameModeratorId()
     }
 
     private fun getPackageFromMessage(message: Message): MessagePackage {
