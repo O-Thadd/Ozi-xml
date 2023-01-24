@@ -14,7 +14,8 @@
         android:screenOrientation="sensorPortrait"
         android:supportsRtl="true"
         android:theme="@style/Theme.Ozi"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        >
 
         <activity
             android:name=".ui.SplashActivity"

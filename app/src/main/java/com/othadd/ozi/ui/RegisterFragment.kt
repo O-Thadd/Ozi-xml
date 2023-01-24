@@ -64,7 +64,7 @@ class RegisterFragment : Fragment() {
 
         sharedViewModel.userIsRegistered.observe(viewLifecycleOwner) {
             if (it) {
-//                findNavController().navigate(RegisterFragmentDirections.actionRegisterFragmentToChatsFragment())
+                findNavController().navigate(RegisterFragmentDirections.actionRegisterFragmentToChatsFragment())
             }
         }
 

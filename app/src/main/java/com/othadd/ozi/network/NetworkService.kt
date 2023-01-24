@@ -10,7 +10,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 
-private const val BASE_URL = "http://192.168.43.107:8080"
+private const val BASE_URL = "https://coastal-haven-309701.ew.r.appspot.com"
 
 //"https://coastal-haven-309701.ew.r.appspot.com"
 //"http://192.168.43.107:8080"

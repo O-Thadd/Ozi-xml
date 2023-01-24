@@ -127,7 +127,10 @@ object MessagingRepoX {
     }
 
     suspend fun sendMessageToServer(message: Message) {
-        NetworkApi.retrofitService.sendMessage(message.toNWMessage())
+        try {
+            NetworkApi.retrofitService.sendMessage(message.toNWMessage())
+        }
+        catch (e: Exception) { throw e }
     }
 
     suspend fun refreshMessages(application: OziApplication) {

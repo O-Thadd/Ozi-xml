@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.othadd.ozi.NOT_INITIALIZED
 import com.othadd.ozi.gaming.DUMMY_STRING
 import com.othadd.ozi.ui.SnackBarState
 import com.othadd.ozi.ui.dataStore
