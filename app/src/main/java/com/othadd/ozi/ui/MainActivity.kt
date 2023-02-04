@@ -8,32 +8,35 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.fragment.app.activityViewModels
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.othadd.ozi.MessagingRepoX
 import com.othadd.ozi.OziApplication
 import com.othadd.ozi.R
+import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.network.NetworkApi
 import com.othadd.ozi.network.USER_OFFLINE
 import com.othadd.ozi.network.USER_ONLINE
 import com.othadd.ozi.utils.SettingsRepo
 import com.othadd.ozi.utils.WORKER_STATUS_UPDATE_KEY
 import com.othadd.ozi.workers.UpdateStatusWorker
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavController
-    private val sharedViewModel: ChatViewModel by viewModels {
-        ChatViewModelFactory(
-            application as OziApplication
-        )
-    }
+
+    private val sharedViewModel: ChatViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -9,6 +9,7 @@ import androidx.lifecycle.*
 import com.google.firebase.messaging.FirebaseMessaging
 import com.othadd.ozi.MessagingRepoX
 import com.othadd.ozi.OziApplication
+import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.database.DBChat
 import com.othadd.ozi.database.getNoDialogDialogType
 import com.othadd.ozi.database.toUIChat
@@ -16,8 +17,11 @@ import com.othadd.ozi.network.CURRENTLY_PLAYING_GAME_STATE
 import com.othadd.ozi.network.NetworkApi
 import com.othadd.ozi.network.User
 import com.othadd.ozi.utils.*
+import dagger.hilt.android.internal.Contexts.getApplication
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 const val DEFAULT = 0
 const val BUSY = 1
@@ -25,17 +29,19 @@ const val PASSED = 2
 const val FAILED = 3
 
 
-class ChatViewModel(
-    application: Application
-) :
-    AndroidViewModel(application) {
+@HiltViewModel
+open class ChatViewModel @Inject constructor(
+    application: OziApplication
+) : ViewModel() {
 
-    private val settingsRepo = SettingsRepo(getApplication())
+    private val chatDao = application.database.chatDao()
+    private val settingsRepo = SettingsRepo(application)
+    private val messagingRepoX = MessagingRepoX(application)
+
     val thisUserId: String = settingsRepo.getUserId()
-    private fun getChatDao() = getApplication<OziApplication>().database.chatDao()
 
     val chats: LiveData<List<UIChat>> =
-        Transformations.map(getChatDao().getChats().asLiveData()) { listOfDBChats ->
+        Transformations.map(chatDao.getChats().asLiveData()) { listOfDBChats ->
             listOfDBChats.sortedByDescending { it.lastMessage()?.dateTime }.toUIChat()
         }
 
@@ -119,11 +125,10 @@ class ChatViewModel(
 
     fun sendMessage(messageBody: String, receiverId: String, senderId: String = thisUserId) {
         viewModelScope.launch {
-            MessagingRepoX.sendMessage(
+            messagingRepoX.sendMessage(
                 senderId,
                 receiverId,
-                messageBody,
-                getApplication()
+                messageBody
             )
         }
     }
@@ -131,9 +136,9 @@ class ChatViewModel(
     fun refreshMessages(failToastMessage: String) {
         viewModelScope.launch {
             try {
-                MessagingRepoX.refreshMessages(getApplication())
+                messagingRepoX.refreshMessages()
             } catch (e: Exception) {
-                showNetworkErrorToast(getApplication(), failToastMessage)
+//                showNetworkErrorToast(getApplication(), failToastMessage)
                 Log.e("viewModelRefreshMessages", e.toString())
             }
         }
@@ -152,16 +157,13 @@ class ChatViewModel(
 
                         // do something with token
                         try {
-                            MessagingRepoX.registerUser(settingsRepo.getUserId(), username, gender, token)
+                            messagingRepoX.registerUser(settingsRepo.getUserId(), username, gender, token)
                             _registrationStatus.value = PASSED
                             settingsRepo.storeUsername(username)
                         } catch (e: Exception) {
                             _registrationStatus.value = FAILED
                             Log.e("registration error", e.toString())
-                            showNetworkErrorToast(
-                                getApplication(),
-                                "encountered error trying to register"
-                            )
+//                            showNetworkErrorToast(getApplication(), "encountered error trying to register")
                         }
                     } else {
                         _registrationStatus.value = FAILED
@@ -176,7 +178,7 @@ class ChatViewModel(
             currentChatChatMateId = userId
             closeSnackBar()
 
-            val chats = getChatDao().getChats().first()
+            val chats = chatDao.getChats().first()
             var chat: DBChat?
             chat = chats.find { it.chatMateId == userId }
             if (chat == null) {
@@ -191,10 +193,10 @@ class ChatViewModel(
                     onlineStatus = user.onlineStatus,
                     verificationStatus = user.verificationStatus
                 )
-                getChatDao().insert(chat)
+                chatDao.insert(chat)
             }
-            _chat = getChatDao().getChatByChatmateId(userId).asLiveData() as MutableLiveData<DBChat>
-            MessagingRepoX.setChat(chat)
+            _chat = chatDao.getChatByChatmateId(userId).asLiveData() as MutableLiveData<DBChat>
+            messagingRepoX.setChat(chat)
 
             _navigateToChatFragment.value = true
         }
@@ -213,7 +215,7 @@ class ChatViewModel(
                 _usersFetchStatus.value = PASSED
             } catch (e: Exception) {
                 _usersFetchStatus.value = FAILED
-                showNetworkErrorToast(getApplication(), "Could not fetch users")
+//                showNetworkErrorToast(getApplication(), "Could not fetch users")
                 _usersFetchStatus.value = DEFAULT
             }
         }
@@ -233,7 +235,7 @@ class ChatViewModel(
                 _searchStatus.value = PASSED
             } catch (e: Exception) {
                 _searchStatus.value = FAILED
-                showNetworkErrorToast(getApplication(), "Could not fetch users")
+//                showNetworkErrorToast(getApplication(), "Could not fetch users")
                 _searchStatus.value = DEFAULT
             }
         }
@@ -248,7 +250,7 @@ class ChatViewModel(
                 _profileFetchStatus.value = PASSED
             } catch (e: Exception) {
                 _profileFetchStatus.value = FAILED
-                showNetworkErrorToast(getApplication(), "Could not fetch profile")
+//                showNetworkErrorToast(getApplication(), "Could not fetch profile")
                 _profileFetchStatus.value = DEFAULT
             }
         }
@@ -264,14 +266,11 @@ class ChatViewModel(
                     _usernameCheckStatus.value = PASSED
                 } else {
                     _usernameCheckStatus.value = FAILED
-                    showNetworkErrorToast(
-                        getApplication(),
-                        "try a different username.\n '$username' has been taken."
-                    )
+//                    showNetworkErrorToast(getApplication(), "try a different username.\n '$username' has been taken.")
                 }
                 updateSignUpConditionsStatus()
             } catch (e: Exception) {
-                showNetworkErrorToast(getApplication(), "username verification failed!")
+//                showNetworkErrorToast(getApplication(), "username verification failed!")
                 _usernameCheckStatus.value = DEFAULT
             }
 
@@ -293,7 +292,7 @@ class ChatViewModel(
 
     fun sendGameRequest() {
         viewModelScope.launch {
-            MessagingRepoX.sendGameRequest(getApplication())
+            messagingRepoX.sendGameRequest()
             _showConfirmGameRequestDialog.value = false
         }
     }
@@ -304,19 +303,19 @@ class ChatViewModel(
 
     fun respondPositive() {
         viewModelScope.launch {
-            MessagingRepoX.givePositiveResponse(getApplication())
+            messagingRepoX.givePositiveResponse()
         }
     }
 
     fun respondNegative() {
         viewModelScope.launch {
-            MessagingRepoX.giveNegativeResponse(getApplication())
+            messagingRepoX.giveNegativeResponse()
         }
     }
 
     fun notifyDialogOkayPressed() {
         viewModelScope.launch {
-            MessagingRepoX.notifyDialogOkayPressed(getApplication())
+            messagingRepoX.notifyDialogOkayPressed()
         }
     }
 
@@ -327,9 +326,9 @@ class ChatViewModel(
     fun markMessagesSent() {
         viewModelScope.launch {
             try {
-                val chat = getChatDao().getChatByChatmateId(_chat.value?.chatMateId!!).first()
+                val chat = chatDao.getChatByChatmateId(_chat.value?.chatMateId!!).first()
                 chat.markAllMessagesSent()
-                getChatDao().update(chat)
+                chatDao.update(chat)
             } catch (e: NullPointerException) {
                 Log.e("viewModel", "null pointer exception trying to mark all messages sent")
             }
@@ -339,9 +338,9 @@ class ChatViewModel(
     fun markMessagesRead() {
         viewModelScope.launch {
             try {
-                val chat = getChatDao().getChatByChatmateId(_chat.value?.chatMateId!!).first()
+                val chat = chatDao.getChatByChatmateId(_chat.value?.chatMateId!!).first()
                 chat.markMessagesRead()
-                getChatDao().update(chat)
+                chatDao.update(chat)
             } catch (e: NullPointerException) {
                 Log.e("viewModel", "null pointer exception trying to mark messages read")
             }
@@ -366,7 +365,7 @@ class ChatViewModel(
     }
 
     fun goToGameRequestSenderChat() {
-        startChat(MessagingRepoX.getGameRequestSenderId())
+        startChat(messagingRepoX.getGameRequestSenderId())
     }
 
     fun snackBarNavigateToChatFromChatFragment() {
@@ -375,7 +374,7 @@ class ChatViewModel(
     }
 
     fun getGameRequestSenderId(): String {
-        return MessagingRepoX.getGameRequestSenderId()
+        return messagingRepoX.getGameRequestSenderId()
     }
 
     fun toggleDarkMode(){
@@ -386,7 +385,7 @@ class ChatViewModel(
     fun refreshUserStatus(userId: String = currentChatChatMateId) {
         viewModelScope.launch {
             try {
-                MessagingRepoX.refreshUser(userId, getChatDao())
+                messagingRepoX.refreshUser(userId)
             } catch (e: Exception) {
                 Log.e("viewModel", "error refreshing user status. $e")
             }
@@ -415,16 +414,18 @@ class ChatViewModel(
     data class ChatAndMessagesSize(val userId: String, var messagesSize: Int)
 }
 
-class ChatViewModelFactory(
-    private val application: Application
-) :
-    ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(ChatViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return ChatViewModel(application) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-
-}
+//class ChatViewModelFactory(
+//    private val chatDao: ChatDao,
+//    private val settingsRepo: SettingsRepo,
+//    private val messagingRepoX: MessagingRepoX
+//) :
+//    ViewModelProvider.Factory {
+//    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+//        if (modelClass.isAssignableFrom(ChatViewModel::class.java)) {
+//            @Suppress("UNCHECKED_CAST")
+//            return ChatViewModel(chatDao, settingsRepo, messagingRepoX) as T
+//        }
+//        throw IllegalArgumentException("Unknown ViewModel class")
+//    }
+//
+//}

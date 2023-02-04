@@ -4,7 +4,6 @@ import android.os.Handler
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.database.DBChat
 import com.othadd.ozi.database.getNoDialogDialogType
 import com.othadd.ozi.gaming.GameManager
@@ -15,32 +14,32 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import java.util.*
 
-object MessagingRepoX {
+class MessagingRepoX(private val oziApp: OziApplication) {
+
+    val chatDao = oziApp.database.chatDao()
+    private val settingsRepo = SettingsRepo(oziApp)
+    private val gameManager = GameManager(oziApp)
 
     suspend fun sendMessage(
         senderId: String,
         receiverId: String,
-        messageBody: String,
-        application: OziApplication
+        messageBody: String
     ) {
         val newMessage =
             Message(senderId, receiverId, messageBody, Calendar.getInstance().timeInMillis)
 
         val messagePackage = MessagePackage()
-        messagePackage.gameModeratorId = getGameModeratorId(application)
+        messagePackage.gameModeratorId = getGameModeratorId()
         val packageString = messagePackageToString(messagePackage)
         newMessage.messagePackage = packageString
 
-        saveOutGoingMessage(application, newMessage)
-        scheduleMessageForSendToServer(newMessage, application)
+        saveOutGoingMessage(newMessage)
+        scheduleMessageForSendToServer(newMessage)
     }
 
-    private fun scheduleMessageForSendToServer(
-        newMessage: Message,
-        application: OziApplication
-    ) {
+    private fun scheduleMessageForSendToServer(newMessage: Message) {
         val newMessageString = messageToString(newMessage)
-        val workManager = WorkManager.getInstance(application)
+        val workManager = WorkManager.getInstance(oziApp)
         val workRequest = OneTimeWorkRequestBuilder<SendChatMessageWorker>()
             .setInputData(workDataOf(WORKER_MESSAGE_KEY to newMessageString))
             .build()
@@ -48,10 +47,10 @@ object MessagingRepoX {
         workManager.enqueue(workRequest)
     }
 
-    private suspend fun findOrCreateChat(userId: String, chatDao: ChatDao): Pair<DBChat, Boolean> {
+    private suspend fun findOrCreateChat(userId: String): Pair<DBChat, Boolean> {
 
         val chatIsNew: Boolean
-        var chat = getChat(userId, chatDao)
+        var chat = getChat(userId)
         if (chat == null) {
             val user = NetworkApi.retrofitService.getUser(userId)
             chat = DBChat(
@@ -70,7 +69,7 @@ object MessagingRepoX {
         return Pair(chat, chatIsNew)
     }
 
-    private suspend fun getChat(userId: String, chatDao: ChatDao): DBChat? {
+    private suspend fun getChat(userId: String): DBChat? {
         val chat: DBChat?
         val chatsInDB = chatDao.getChats().first()
         chat = chatsInDB.find { it.chatMateId == userId }
@@ -79,14 +78,12 @@ object MessagingRepoX {
     }
 
     private suspend fun saveMessage(
-        application: OziApplication,
         newMessage: Message,
         chatMateId: String
     ) {
 
         newMessage.dateTime = Calendar.getInstance().timeInMillis
-        val chatDao = application.database.chatDao()
-        val resultOfFindChat = findOrCreateChat(chatMateId, chatDao)
+        val resultOfFindChat = findOrCreateChat(chatMateId)
         val chat = resultOfFindChat.first
         val chatIsNew = resultOfFindChat.second
         chat.addMessage(newMessage)
@@ -94,33 +91,33 @@ object MessagingRepoX {
 
 
         Handler().postDelayed({
-            SettingsRepo(application).updateScroll(true)
+            settingsRepo.updateScroll(true)
         }, 100)
 
         Handler().postDelayed({
-            SettingsRepo(application).updateScroll(false)
+            settingsRepo.updateScroll(false)
         }, 200)
 
     }
 
-    private suspend fun saveOutGoingMessage(application: OziApplication, newMessage: Message) {
+    private suspend fun saveOutGoingMessage(newMessage: Message) {
         val chatMateId = newMessage.receiverId
-        saveMessage(application, newMessage, chatMateId)
+        saveMessage(newMessage, chatMateId)
     }
 
-    suspend fun saveIncomingMessage(application: OziApplication, newMessage: Message) {
+    suspend fun saveIncomingMessage(newMessage: Message) {
         val chatMateId = newMessage.senderId
 
         val delay = try { getPackageFromMessage(newMessage).delayPostingBy }
         catch (e: Exception) { 0 }
 
         if (delay == 0) {
-            saveMessage(application, newMessage, chatMateId)
+            saveMessage(newMessage, chatMateId)
         } else {
 
             Handler().postDelayed({
                 runBlocking {
-                    saveMessage(application, newMessage, chatMateId)
+                    saveMessage(newMessage, chatMateId)
                 }
             }, delay.toLong())
         }
@@ -133,22 +130,19 @@ object MessagingRepoX {
         catch (e: Exception) { throw e }
     }
 
-    suspend fun refreshMessages(application: OziApplication) {
+    suspend fun refreshMessages() {
 
         val newMessages: List<NWMessage>
         try {
             newMessages =
-                NetworkApi.retrofitService.getMessages(SettingsRepo(application).getUserId())
+                NetworkApi.retrofitService.getMessages(settingsRepo.getUserId())
         } catch (e: Exception) {
             throw e
         }
-        handleReceivedMessages(newMessages, application)
+        handleReceivedMessages(newMessages)
     }
 
-    private suspend fun handleReceivedMessages(
-        newMessages: List<NWMessage>,
-        application: OziApplication
-    ) {
+    private suspend fun handleReceivedMessages(newMessages: List<NWMessage>) {
 
         // handle regular chat messages
         val chatMessages = newMessages.filter { it.type == CHAT_MESSAGE_TYPE }
@@ -160,11 +154,11 @@ object MessagingRepoX {
             if (delayPosting) {
                 Handler().postDelayed({
                     runBlocking {
-                        saveIncomingMessage(application, message.toMessage())
+                        saveIncomingMessage(message.toMessage())
                     }
                 }, 2000)
             } else {
-                saveIncomingMessage(application, message.toMessage())
+                saveIncomingMessage(message.toMessage())
             }
 
         }
@@ -172,7 +166,7 @@ object MessagingRepoX {
 //        handle status update messages
         val statusUpdateMessages = newMessages.filter { it.type == STATUS_UPDATE_MESSAGE_TYPE }
         for (message in statusUpdateMessages) {
-            handleStatusUpdateMessage(message, application.database.chatDao())
+            handleStatusUpdateMessage(message)
         }
 
         // handle other types
@@ -185,13 +179,13 @@ object MessagingRepoX {
         gamingMessages.removeAll(chatMessages)
         gamingMessages.removeAll(statusUpdateMessages)
         if (gamingMessages.isNotEmpty()) {
-            GameManager.handleMessage(gamingMessages, application)
+            gameManager.handleMessage(gamingMessages)
         }
     }
 
-    private suspend fun handleStatusUpdateMessage(newMessage: NWMessage, chatDao: ChatDao) {
+    private suspend fun handleStatusUpdateMessage(newMessage: NWMessage) {
         val message = newMessage.toMessage()
-        val chat = findOrCreateChat(message.senderId, chatDao).first
+        val chat = findOrCreateChat(message.senderId).first
         when (message.body) {
             USER_ONLINE -> chat.onlineStatus = true
             USER_OFFLINE -> chat.onlineStatus = false
@@ -205,41 +199,41 @@ object MessagingRepoX {
         NetworkApi.retrofitService.registerNewUserWithToken(userId, username, gender, token)
     }
 
-    suspend fun sendGameRequest(application: OziApplication) {
-        GameManager.sendGameRequest(application)
+    suspend fun sendGameRequest() {
+        gameManager.sendGameRequest()
     }
 
     fun setChat(chat: DBChat) {
-        GameManager.setCurrentChat(chat)
+        gameManager.setCurrentChat(chat)
     }
 
-    suspend fun givePositiveResponse(application: OziApplication) {
-        GameManager.givePositiveResponse(application)
+    suspend fun givePositiveResponse() {
+        gameManager.givePositiveResponse()
     }
 
-    suspend fun giveNegativeResponse(application: OziApplication) {
-        GameManager.giveNegativeResponse(application)
+    suspend fun giveNegativeResponse() {
+        gameManager.giveNegativeResponse()
     }
 
-    suspend fun notifyDialogOkayPressed(application: OziApplication) {
-        GameManager.notifyDialogOkayPressed(application)
+    suspend fun notifyDialogOkayPressed() {
+        gameManager.notifyDialogOkayPressed()
     }
 
     fun getGameRequestSenderId(): String {
-        return GameManager.getGameRequestSenderId()
+        return gameManager.getGameRequestSenderId()
     }
 
-    private fun getGameModeratorId(application: OziApplication): String {
-        return GameManager.getGameModeratorId(application)
+    private fun getGameModeratorId(): String {
+        return gameManager.getGameModeratorId()
     }
 
     private fun getPackageFromMessage(message: Message): MessagePackage {
         return stringToMessagePackage(message.messagePackage)
     }
 
-    suspend fun refreshUser(userId: String, chatDao: ChatDao) {
+    suspend fun refreshUser(userId: String) {
         val user = NetworkApi.retrofitService.getUser(userId)
-        val dbChat = getChat(userId, chatDao)!!
+        val dbChat = getChat(userId)!!
         dbChat.verificationStatus = user.verificationStatus
         dbChat.onlineStatus = user.onlineStatus
         chatDao.update(dbChat)

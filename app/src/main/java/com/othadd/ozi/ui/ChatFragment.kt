@@ -25,17 +25,32 @@ import androidx.lifecycle.LiveData
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.othadd.ozi.*
+import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.database.NOTIFY_DIALOG_TYPE
 import com.othadd.ozi.database.PROMPT_DIALOG_TYPE
 import com.othadd.ozi.databinding.FragmentChatBinding
+import com.othadd.ozi.utils.SettingsRepo
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+
+@AndroidEntryPoint
 class ChatFragment : Fragment() {
 
-    private val sharedViewModel: ChatViewModel by activityViewModels {
-        ChatViewModelFactory(
-            activity?.application as OziApplication
-        )
-    }
+//    @Inject
+//    lateinit var chatDao: ChatDao
+//
+//    @Inject
+//    lateinit var messagingRepoX: MessagingRepoX
+//
+//    @Inject
+//    lateinit var settingsRepo: SettingsRepo
+//
+//    private val sharedViewModel: ChatViewModel by activityViewModels {
+//        ChatViewModelFactory( chatDao, settingsRepo, messagingRepoX)
+//    }
+
+    private val sharedViewModel: ChatViewModel by activityViewModels()
 
 
     private lateinit var binding: FragmentChatBinding

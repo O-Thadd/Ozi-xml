@@ -6,15 +6,18 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.fragment.app.activityViewModels
+import com.othadd.ozi.MessagingRepoX
 import com.othadd.ozi.OziApplication
+import com.othadd.ozi.database.ChatDao
+import com.othadd.ozi.utils.SettingsRepo
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class SplashActivity : AppCompatActivity() {
 
-    private val sharedViewModel: ChatViewModel by viewModels {
-        ChatViewModelFactory(
-            application as OziApplication
-        )
-    }
+    private val sharedViewModel: ChatViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()

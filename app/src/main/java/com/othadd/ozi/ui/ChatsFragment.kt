@@ -22,17 +22,20 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.othadd.ozi.*
+import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.databinding.FragmentChatsBinding
 import com.othadd.ozi.utils.GAME_REQUEST_NOTIFICATION_CHANNEL_ID
+import com.othadd.ozi.utils.SettingsRepo
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
+
+@AndroidEntryPoint
 class ChatsFragment : Fragment() {
-    private val sharedViewModel: ChatViewModel by activityViewModels {
-        ChatViewModelFactory(
-            activity?.application as OziApplication
-        )
-    }
+
+    private val sharedViewModel: ChatViewModel by activityViewModels()
 
     private lateinit var binding: FragmentChatsBinding
     private lateinit var chatsRecyclerAdapter: ChatsRecyclerAdapter

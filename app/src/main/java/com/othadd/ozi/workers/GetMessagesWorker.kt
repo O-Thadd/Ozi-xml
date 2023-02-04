@@ -17,7 +17,7 @@ GetMessagesWorker(context: Context, params: WorkerParameters) :
         val appContext = applicationContext as OziApplication
         return runBlocking(Dispatchers.Main) {
             try {
-                MessagingRepoX.refreshMessages(appContext)
+                MessagingRepoX(appContext).refreshMessages()
                 Result.success()
             } catch (throwable: Throwable) {
                 Log.e("getWorker", throwable.message.toString())

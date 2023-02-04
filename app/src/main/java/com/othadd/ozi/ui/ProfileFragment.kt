@@ -11,17 +11,19 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.activityViewModels
+import com.othadd.ozi.MessagingRepoX
 import com.othadd.ozi.OziApplication
+import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.databinding.FragmentProfileBinding
 import com.othadd.ozi.network.MALE
+import com.othadd.ozi.utils.SettingsRepo
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class ProfileFragment : Fragment() {
 
-    private val sharedViewModel: ChatViewModel by activityViewModels {
-        ChatViewModelFactory(
-            activity?.application as OziApplication
-        )
-    }
+    private val sharedViewModel: ChatViewModel by activityViewModels()
 
     private lateinit var binding: FragmentProfileBinding
 

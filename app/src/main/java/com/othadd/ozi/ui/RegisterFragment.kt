@@ -15,16 +15,17 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.othadd.ozi.*
+import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.databinding.FragmentRegisterBinding
 import com.othadd.ozi.databinding.RegisterDialogBinding
+import com.othadd.ozi.utils.SettingsRepo
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class RegisterFragment : Fragment() {
 
-    private val sharedViewModel: ChatViewModel by activityViewModels {
-        ChatViewModelFactory(
-            activity?.application as OziApplication
-        )
-    }
+    private val sharedViewModel: ChatViewModel by activityViewModels()
 
     private lateinit var binding: FragmentRegisterBinding
     private lateinit var includedBinding: RegisterDialogBinding

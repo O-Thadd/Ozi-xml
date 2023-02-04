@@ -1,11 +1,15 @@
 package com.othadd.ozi.gaming
 
+import android.content.Context
 import android.os.CountDownTimer
 import com.othadd.ozi.OziApplication
 import com.othadd.ozi.R
 import com.othadd.ozi.database.DialogState
 import com.othadd.ozi.database.getNotifyDialogType
 import com.othadd.ozi.database.getPromptDialogType
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
@@ -17,7 +21,7 @@ const val FINISH_COUNTDOWN_STAGE = "finish"
 
 class OziCountDownTimer(
     val userId: String,
-    val application: OziApplication,
+    private val application: OziApplication,
     val onCountDownFinish: (OziCountDownTimer, userId: String, timerType: String) -> Unit
 ) {
 

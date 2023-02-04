@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.othadd.ozi.MessagingRepoX
+import com.othadd.ozi.OziApplication
 import com.othadd.ozi.network.NetworkApi
 import com.othadd.ozi.utils.SettingsRepo
 import com.othadd.ozi.utils.WORKER_MESSAGE_KEY
@@ -16,7 +17,7 @@ class SendChatMessageWorker(appContext: Context, workerParams: WorkerParameters)
     override suspend fun doWork(): Result {
         return try {
             val message = stringToMessage(inputData.getString(WORKER_MESSAGE_KEY)!!)
-            MessagingRepoX.sendMessageToServer(message)
+            MessagingRepoX(applicationContext as OziApplication).sendMessageToServer(message)
             SettingsRepo(applicationContext).updateMarkSent(true)
             SettingsRepo(applicationContext).updateMarkSent(false)
             Result.success()
