@@ -1,7 +1,6 @@
 package com.othadd.ozi
 
 import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.*
 import androidx.work.OneTimeWorkRequestBuilder
@@ -55,6 +54,8 @@ class MessagingRepoX(private val oziApp: OziApplication) {
     val profile = _profile.asStateFlow()
 
     val darkModeSet = settingsRepo.darkModeFlow()
+
+    val messageRefreshError = MutableStateFlow(Int)
 
 
 
@@ -169,7 +170,7 @@ class MessagingRepoX(private val oziApp: OziApplication) {
         }
     }
 
-    suspend fun sendMessageX(
+    suspend fun sendMessage(
         receiverId: String,
         messageBody: String,
         senderId: String = thisUserId
@@ -186,23 +187,6 @@ class MessagingRepoX(private val oziApp: OziApplication) {
         scheduleMessageForSendToServer(newMessage)
     }
 
-
-    suspend fun sendMessage(
-        senderId: String,
-        receiverId: String,
-        messageBody: String
-    ) {
-        val newMessage =
-            Message(senderId, receiverId, messageBody, Calendar.getInstance().timeInMillis)
-
-        val messagePackage = MessagePackage()
-        messagePackage.gameModeratorId = getGameModeratorId()
-        val packageString = messagePackageToString(messagePackage)
-        newMessage.messagePackage = packageString
-
-        saveOutGoingMessage(newMessage)
-        scheduleMessageForSendToServer(newMessage)
-    }
 
     private fun scheduleMessageForSendToServer(newMessage: Message) {
         val newMessageString = messageToString(newMessage)
@@ -307,9 +291,7 @@ class MessagingRepoX(private val oziApp: OziApplication) {
         try {
             newMessages =
                 NetworkApi.retrofitService.getMessages(settingsRepo.getUserId())
-        } catch (e: Exception) {
-            throw e
-        }
+        } catch (e: Exception) { throw e }
         handleReceivedMessages(newMessages)
     }
 

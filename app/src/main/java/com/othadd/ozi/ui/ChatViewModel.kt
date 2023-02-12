@@ -13,6 +13,7 @@ import com.othadd.ozi.models.ProfileFragmentUIState
 import com.othadd.ozi.network.CURRENTLY_PLAYING_GAME_STATE
 import com.othadd.ozi.network.NetworkApi
 import com.othadd.ozi.utils.*
+import dagger.hilt.android.internal.Contexts.getApplication
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
@@ -117,7 +118,7 @@ open class ChatViewModel @Inject constructor(
 
     fun sendMessage(messageBody: String, receiverId: String, senderId: String = thisUserId) {
         viewModelScope.launch {
-            messagingRepoX.sendMessageX(
+            messagingRepoX.sendMessage(
                 receiverId,
                 messageBody
             )
@@ -134,7 +135,7 @@ open class ChatViewModel @Inject constructor(
             try {
                 messagingRepoX.refreshMessages()
             } catch (e: Exception) {
-//                showNetworkErrorToast(getApplication(), failToastMessage)
+                showNetworkErrorToast(getApplication(), failToastMessage)
                 Log.e("viewModelRefreshMessages", e.toString())
             }
         }
