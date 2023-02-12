@@ -22,18 +22,16 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.othadd.ozi.*
-import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.databinding.FragmentChatsBinding
 import com.othadd.ozi.utils.GAME_REQUEST_NOTIFICATION_CHANNEL_ID
-import com.othadd.ozi.utils.SettingsRepo
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 
 @AndroidEntryPoint
 class ChatsFragment : Fragment() {
+
 
     private val sharedViewModel: ChatViewModel by activityViewModels()
 
@@ -58,7 +56,6 @@ class ChatsFragment : Fragment() {
         binding = FragmentChatsBinding.inflate(inflater, container, false)
         chatsRecyclerAdapter = ChatsRecyclerAdapter {
             sharedViewModel.startChat(it)
-//            findNavController().navigate(ChatsFragmentDirections.actionChatsFragmentToChatFragment())
         }
 
         binding.apply {
@@ -66,7 +63,6 @@ class ChatsFragment : Fragment() {
             viewModel = sharedViewModel
             chatsFragment = this@ChatsFragment
             chatsRecyclerView.adapter = chatsRecyclerAdapter
-
         }
 
         createChannel(
@@ -95,25 +91,33 @@ class ChatsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        menuOverlay = binding.menuOverlayView
-        snackBar = binding.snackbarLinearLayout
-        snackBarActionButton = binding.snackBarActionButtonTextView
-        snackBarCloseButton = binding.closeSnackBarButtonImageView
-        findOthersTextView = binding.findOthersButtonTextView
-        menuListLinearLayout = binding.menuListLinearLayout
+//        menuOverlay = binding.menuOverlayView
+//        snackBar = binding.snackbarLinearLayout
+//        snackBarActionButton = binding.snackBarActionButtonTextView
+//        snackBarCloseButton = binding.closeSnackBarButtonImageView
+//        findOthersTextView = binding.findOthersButtonTextView
+//        menuListLinearLayout = binding.menuListLinearLayout
+//        snackBarHeight = snackBar.height.toFloat()
+
+        binding.apply {
+            menuOverlay = menuOverlayView
+            snackBar = snackbarLinearLayout
+            snackBarActionButton = snackBarActionButtonTextView
+            snackBarCloseButton = closeSnackBarButtonImageView
+            findOthersTextView = findOthersButtonTextView
+            this@ChatsFragment.menuListLinearLayout = menuListLinearLayout
+        }
         snackBarHeight = snackBar.height.toFloat()
 
-        sharedViewModel.chats.observe(viewLifecycleOwner) {
-            chatsRecyclerAdapter.submitList(it)
 
-            if (it.isEmpty()) {
-                binding.chatsRecyclerView.visibility = View.GONE
-                binding.emptyStateLinearLayout.visibility = View.VISIBLE
-            } else {
-                binding.chatsRecyclerView.visibility = View.VISIBLE
-                binding.emptyStateLinearLayout.visibility = View.GONE
-            }
+        sharedViewModel.chatsFragmentUIState.observe(viewLifecycleOwner){
+            handleChatsForEmptyState(it.chats)
+            handleDarkMode(it.darkModeSet)
         }
+
+//        sharedViewModel.chats.observe(viewLifecycleOwner) {
+//            handleChatsForEmptyState(it)
+//        }
 
         sharedViewModel.navigateToChatFragment.observe(viewLifecycleOwner) {
             if (it) {
@@ -145,10 +149,24 @@ class ChatsFragment : Fragment() {
             }
         }
 
-        sharedViewModel.darkMode.observe(viewLifecycleOwner){
-            binding.darkModeToggleMenuItemTextView.text = if (it) "Light Mode" else "Dark Mode"
-        }
+//        sharedViewModel.darkMode.observe(viewLifecycleOwner){
+//            handleDarkMode(it)
+//        }
 
+    }
+
+    private fun handleDarkMode(darkModeSet: Boolean) {
+        binding.darkModeToggleMenuItemTextView.text = if (darkModeSet) "Light Mode" else "Dark Mode"
+    }
+
+    private fun handleChatsForEmptyState(chats: List<UIChat>) {
+        if (chats.isEmpty()) {
+            binding.chatsRecyclerView.visibility = View.GONE
+            binding.emptyStateLinearLayout.visibility = View.VISIBLE
+        } else {
+            binding.chatsRecyclerView.visibility = View.VISIBLE
+            binding.emptyStateLinearLayout.visibility = View.GONE
+        }
     }
 
     fun findUsers() {

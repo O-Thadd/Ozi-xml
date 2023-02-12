@@ -16,12 +16,14 @@ import com.othadd.ozi.OziApplication
 import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.databinding.FragmentProfileBinding
 import com.othadd.ozi.network.MALE
+import com.othadd.ozi.network.User
 import com.othadd.ozi.utils.SettingsRepo
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class ProfileFragment : Fragment() {
+
 
     private val sharedViewModel: ChatViewModel by activityViewModels()
 
@@ -63,29 +65,33 @@ class ProfileFragment : Fragment() {
         couldNotFetchTextView = binding.couldNotFetchProfileTextView
         tryAgainTextViewButton = binding.tryAgainButtonTextView
         profileDetailsGroup = binding.profileDetailsGroupConstraintLayout
-//        snackBar = binding.snackBarLinearLayout
-//        snackBarActionButton = binding.snackBarActionButtonTextView
-//        snackBarCloseButton = binding.closeSnackBarButtonImageView
 
         animator = ObjectAnimator.ofFloat(loadingIcon, View.ROTATION, -360f, 0f)
         animator.repeatCount = ObjectAnimator.INFINITE
         animator.duration = 300
 
-        sharedViewModel.profile.observe(viewLifecycleOwner){
-            binding.apply {
-                usernameTextView.text = it.username
-                genderTextView.text = if(it.gender == MALE) "Male" else "Female"
-                onlineTextView.text = if (it.onlineStatus) "Online" else "Offline"
-                verificationTextView.text = if(it.verificationStatus) "Verified" else "Not Verified"
-            }
+        sharedViewModel.profileFragmentUIState.observe(viewLifecycleOwner){
+            handleProfile(it.profile)
+            handleProfileFetchStatus(it.fetchStatus)
         }
+    }
 
-        sharedViewModel.profileFetchStatus.observe(viewLifecycleOwner) {
-            when (it) {
-                BUSY -> startAnimation()
-                PASSED -> stopAnimationWithSuccess()
-                FAILED -> stopAnimationWithFailure()
-            }
+    private fun handleProfileFetchStatus(status: Int) {
+        when (status) {
+            BUSY -> startAnimation()
+            PASSED -> stopAnimationWithSuccess()
+            FAILED -> stopAnimationWithFailure()
+        }
+    }
+
+    private fun handleProfile(profile: User?) {
+        profile ?: return
+        binding.apply {
+            usernameTextView.text = profile.username
+            genderTextView.text = if (profile.gender == MALE) "Male" else "Female"
+            onlineTextView.text = if (profile.onlineStatus) "Online" else "Offline"
+            verificationTextView.text =
+                if (profile.verificationStatus) "Verified" else "Not Verified"
         }
     }
 

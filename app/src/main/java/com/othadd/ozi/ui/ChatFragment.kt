@@ -50,8 +50,8 @@ class ChatFragment : Fragment() {
 //        ChatViewModelFactory( chatDao, settingsRepo, messagingRepoX)
 //    }
 
-    private val sharedViewModel: ChatViewModel by activityViewModels()
 
+    private val sharedViewModel: ChatViewModel by activityViewModels()
 
     private lateinit var binding: FragmentChatBinding
     private lateinit var messagesRecyclerAdapter: MessagesRecyclerAdapter

@@ -36,6 +36,7 @@ import javax.inject.Inject
 class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavController
 
+
     private val sharedViewModel: ChatViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {

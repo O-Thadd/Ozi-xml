@@ -8,17 +8,15 @@ import com.othadd.ozi.database.*
 import com.othadd.ozi.network.NetworkApi
 import com.othadd.ozi.ui.getPromptSnackBar
 import com.othadd.ozi.utils.*
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import javax.inject.Inject
 
 const val RESPOND_TO_GAME_REQUEST_PROMPT_TYPE = "respond to game request"
 const val DUMMY_STRING = "dummy string"
 const val CARRYING_GAME_MODERATOR_ID_CONTENT_DESC = "carrying game moderator id"
 
 
-class GameManager(private val oziApp: OziApplication) {
+class GameManager(private val oziApp: OziApplication, messagingRepoX: MessagingRepoX) {
 
     //    private fun getChatDao(application: OziApplication) = application.database.chatDao()
     private var currentChatChat: DBChat? = null
@@ -28,7 +26,7 @@ class GameManager(private val oziApp: OziApplication) {
 
     private val chatDao: ChatDao = oziApp.database.chatDao()
     private val settingsRepo: SettingsRepo = SettingsRepo(oziApp)
-    private val messagingRepo = MessagingRepoX(oziApp)
+    private val messagingRepo = messagingRepoX
 
     private val timers: MutableList<OziCountDownTimer> = mutableListOf()
 
@@ -223,7 +221,7 @@ class GameManager(private val oziApp: OziApplication) {
                 }
 
                 GAME_REQUEST_MESSAGE_TYPE -> {
-                    val chat = chatDao.getChatByChatmateId(message.senderId).first()
+                    val chat = chatDao.getChatByChatmateIdFlow(message.senderId).first()
                     if (!chat.messages.any { it.id == message.id }) {
                         messagingRepo.saveIncomingMessage(message.toMessage())
                         currentPromptType = RESPOND_TO_GAME_REQUEST_PROMPT_TYPE
@@ -306,7 +304,7 @@ class GameManager(private val oziApp: OziApplication) {
     }
 
     private suspend fun getUsername(userId: String): String {
-        return chatDao.getChatByChatmateId(userId).first().chatMateUsername
+        return chatDao.getChatByChatmateIdFlow(userId).first().chatMateUsername
     }
 
     private suspend fun updateDialogState(
@@ -330,7 +328,7 @@ class GameManager(private val oziApp: OziApplication) {
          */
 
         val chat = try {
-            chatDao.getChatByChatmateId(chatMateId).first()
+            chatDao.getChatByChatmateIdFlow(chatMateId).first()
         } catch (e: Exception) {
             return
         }

@@ -2,7 +2,6 @@ package com.othadd.ozi.ui
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
-import android.media.Image
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -15,7 +14,8 @@ import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
-import com.othadd.ozi.*
+import com.othadd.ozi.MessagingRepoX
+import com.othadd.ozi.OziApplication
 import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.databinding.FragmentFindUsersBinding
 import com.othadd.ozi.utils.SettingsRepo
@@ -24,6 +24,7 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class FindUsersFragment : Fragment() {
+
 
     private val sharedViewModel: ChatViewModel by activityViewModels()
 
@@ -92,21 +93,18 @@ class FindUsersFragment : Fragment() {
             }
         }
 
-        sharedViewModel.usersFetchStatus.observe(viewLifecycleOwner) {
-            when (it) {
-                BUSY -> startAnimation()
-                PASSED -> stopAnimationWithSuccess()
-                FAILED -> stopAnimationWithFailure()
-            }
+        sharedViewModel.findUsersFragmentUIState.observe(viewLifecycleOwner){
+            handleFetchStatus(it.fetchStatus)
+            handleSearchStatus(it.searchStatus)
         }
 
-        sharedViewModel.searchStatus.observe(viewLifecycleOwner) {
-            when (it) {
-                BUSY -> startSearchAnimation()
-                PASSED -> stopSearchAnimationWithSuccess()
-                FAILED -> stopSearchAnimationWithFailure()
-            }
-        }
+//        sharedViewModel.usersFetchStatus.observe(viewLifecycleOwner) {
+//            handleFetchStatus(it)
+//        }
+//
+//        sharedViewModel.searchStatus.observe(viewLifecycleOwner) {
+//            handleSearchStatus(it)
+//        }
 
         sharedViewModel.snackBarState.observe(viewLifecycleOwner) {
             when {
@@ -134,6 +132,31 @@ class FindUsersFragment : Fragment() {
             sharedViewModel.getMatchingUsers(it.toString())
         }
 
+    }
+
+    private fun handleSearchStatus(status: Int?) {
+        when (status) {
+            BUSY -> {
+                startSearchAnimation()
+            }
+            else -> {
+                stopSearchAnimation()
+            }
+        }
+    }
+
+    private fun handleFetchStatus(status: Int?) {
+        when (status) {
+            BUSY -> {
+                startAnimation()
+            }
+            PASSED -> {
+                stopAnimationWithSuccess()
+            }
+            FAILED -> {
+                stopAnimationWithFailure()
+            }
+        }
     }
 
     private fun showSnackBar() {
@@ -197,6 +220,11 @@ class FindUsersFragment : Fragment() {
     }
 
     private fun stopSearchAnimationWithSuccess() {
+        searchLoadingIcon.visibility = View.INVISIBLE
+        searchAnimator.cancel()
+    }
+
+    private fun stopSearchAnimation(){
         searchLoadingIcon.visibility = View.INVISIBLE
         searchAnimator.cancel()
     }

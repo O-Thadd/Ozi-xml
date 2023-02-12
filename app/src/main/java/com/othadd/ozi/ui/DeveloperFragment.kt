@@ -22,6 +22,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class DeveloperFragment : Fragment() {
 
+
     private val sharedViewModel: ChatViewModel by activityViewModels()
 
     private lateinit var binding: FragmentDeveloperBinding

@@ -114,7 +114,7 @@
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/chats_recyclerView"
-                listData="@{viewModel.chats}"
+                listData="@{viewModel.chatsFragmentUIState.chats}"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_marginBottom="4dp"

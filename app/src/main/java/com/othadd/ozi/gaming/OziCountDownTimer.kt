@@ -1,15 +1,11 @@
 package com.othadd.ozi.gaming
 
-import android.content.Context
 import android.os.CountDownTimer
 import com.othadd.ozi.OziApplication
 import com.othadd.ozi.R
 import com.othadd.ozi.database.DialogState
 import com.othadd.ozi.database.getNotifyDialogType
 import com.othadd.ozi.database.getPromptDialogType
-import dagger.hilt.EntryPoint
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
@@ -29,7 +25,7 @@ class OziCountDownTimer(
     private lateinit var type: String
 
     private val chatDao = application.database.chatDao()
-    private suspend fun getChat() = chatDao.getChatByChatmateId(userId).first()
+    private suspend fun getChat() = chatDao.getChatByChatmateIdFlow(userId).first()
     private suspend fun getUsername() = getChat().chatMateUsername
 
     private suspend fun getDialog(countDownTime: Int, countDownStage: String): DialogState {
