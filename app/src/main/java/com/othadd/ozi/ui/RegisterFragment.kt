@@ -15,17 +15,16 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.othadd.ozi.*
-import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.databinding.FragmentRegisterBinding
 import com.othadd.ozi.databinding.RegisterDialogBinding
-import com.othadd.ozi.utils.SettingsRepo
+import com.othadd.ozi.utils.showToast
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class RegisterFragment : Fragment() {
 
 
+    private var checkedUsername = ""
     private val sharedViewModel: ChatViewModel by activityViewModels()
 
     private lateinit var binding: FragmentRegisterBinding
@@ -38,10 +37,15 @@ class RegisterFragment : Fragment() {
     private lateinit var signupTextView: TextView
     private lateinit var registerLoadingIconImageView: ImageView
 
+    private lateinit var checkUsernameImageView: ImageView
+    private lateinit var genderTextView: TextView
+    private lateinit var maleOptionTextView: TextView
+    private lateinit var femaleOptionTextView: TextView
+
     private lateinit var registerIconAnimator: ObjectAnimator
+    private lateinit var usernameCheckAnimator: ObjectAnimator
 
     private var triggerCount = 0
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -64,81 +68,91 @@ class RegisterFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        sharedViewModel.userIsRegistered.observe(viewLifecycleOwner) {
-            if (it) {
-                findNavController().navigate(RegisterFragmentDirections.actionRegisterFragmentToChatsFragment())
-            }
+        fragmentMotionLayout = binding.constraintLayout
+
+        includedBinding.apply {
+            this@RegisterFragment.checkUsernameImageView = checkUsernameImageView
+            this@RegisterFragment.genderTextView = genderTextView
+            maleOptionTextView = maleTextView
+            femaleOptionTextView = femaleTextView
+
+            genderSelectionPopup = genderSelectionDialogLinearLayout
+            this@RegisterFragment.usernameEditText = usernameEditText
+            genderTextview = genderTextView
+            signupTextView = signUpTextView
+            this@RegisterFragment.registerLoadingIconImageView = registerLoadingIconImageView
         }
 
-        val checkUsernameImageView = includedBinding.checkUsernameImageView
-        val genderTextView = includedBinding.genderTextView
-        val maleOptionTextView = includedBinding.maleTextView
-        val femaleOptionTextView = includedBinding.femaleTextView
+        usernameCheckAnimator =
+        ObjectAnimator.ofFloat(checkUsernameImageView, View.ROTATION, -360f, 0f).apply {
+            repeatCount = ObjectAnimator.INFINITE
+            duration = 300
+        }
 
-        genderSelectionPopup = includedBinding.genderSelectionDialogLinearLayout
-        usernameEditText = includedBinding.usernameEditText
-        fragmentMotionLayout = binding.constraintLayout
-        genderTextview = includedBinding.genderTextView
-        signupTextView = includedBinding.signUpTextView
-        registerLoadingIconImageView = includedBinding.registerLoadingIconImageView
+        registerIconAnimator =
+        ObjectAnimator.ofFloat(registerLoadingIconImageView, View.ROTATION, -360f, 0f).apply {
+            repeatCount = ObjectAnimator.INFINITE
+            duration = 300
+        }
 
-        registerIconAnimator = ObjectAnimator.ofFloat(registerLoadingIconImageView, View.ROTATION, -360f, 0f)
-        registerIconAnimator.repeatCount = ObjectAnimator.INFINITE
-        registerIconAnimator.duration = 300
-
-        val usernameCheckAnimator = ObjectAnimator.ofFloat(checkUsernameImageView, View.ROTATION, -360f, 0f)
-        usernameCheckAnimator.repeatCount = ObjectAnimator.INFINITE
-        usernameCheckAnimator.duration = 300
+        sharedViewModel.registerFragmentUIState.observe(viewLifecycleOwner) {
+            if (it.userIsRegistered) {
+                findNavController().navigate(RegisterFragmentDirections.actionRegisterFragmentToChatsFragment())
+            }
+            handleUsernameCheckStatus(it.usernameCheckStatus)
+            handleRegisteringStatus(it.registrationStatus)
+            signupTextView.isEnabled = it.signUpConditionsMet
+            if (it.genderPopupShowing) showGenderSelectionPopup() else hideGenderSelectionPopup()
+        }
 
         genderTextView.setOnClickListener {
-            if (sharedViewModel.genderSelectionPopupIsShowing){
-                hideGenderSelectionPopup(genderSelectionPopup)
-            }
-            else{
-                showGenderSelectionPopup(genderSelectionPopup)
-            }
+            sharedViewModel.toggleGenderSelectionPopup()
         }
 
         maleOptionTextView.setOnClickListener {
             genderTextView.text = "Male"
-            hideGenderSelectionPopup(genderSelectionPopup)
-            sharedViewModel.genderHasBeenSelected = true
-            sharedViewModel.updateSignUpConditionsStatus()
+            sharedViewModel.updateGenderSelected(true)
+            sharedViewModel.hideGenderSelectionPopup()
         }
 
         femaleOptionTextView.setOnClickListener {
             genderTextView.text = "Female"
-            hideGenderSelectionPopup(genderSelectionPopup)
-            sharedViewModel.genderHasBeenSelected = true
-            sharedViewModel.updateSignUpConditionsStatus()
-        }
-
-        sharedViewModel.usernameCheckStatus.observe(viewLifecycleOwner){
-            when(it){
-                BUSY -> startAnimation(checkUsernameImageView, usernameCheckAnimator)
-                PASSED -> stopAnimationWithSuccess(checkUsernameImageView, usernameCheckAnimator)
-                FAILED -> stopAnimationWithFailure(checkUsernameImageView, usernameCheckAnimator)
-                DEFAULT -> resetAnimation(checkUsernameImageView, usernameCheckAnimator)
-            }
+            sharedViewModel.updateGenderSelected(true)
+            sharedViewModel.hideGenderSelectionPopup()
         }
 
         includedBinding.usernameEditText.setOnClickListener {
             sharedViewModel.resetUsernameCheck()
         }
 
-        sharedViewModel.signUpConditionsMet.observe(viewLifecycleOwner){
-            signupTextView.isEnabled = it
-        }
-
         usernameEditText.addTextChangedListener{
             checkUsername()
         }
+    }
 
-        sharedViewModel.registrationStatus.observe(viewLifecycleOwner){
-            when(it){
-                BUSY -> startRegistrationAnimation()
-                PASSED -> stopRegistrationAnimationWithSuccess()
-                FAILED -> stopRegistrationAnimationWithFailure()
+    private fun handleUsernameCheckStatus(status: Int) {
+        when (status) {
+            BUSY -> startAnimation(checkUsernameImageView, usernameCheckAnimator)
+            PASSED -> stopAnimationWithSuccess(checkUsernameImageView, usernameCheckAnimator)
+            FAILED -> {
+                stopAnimationWithFailure(checkUsernameImageView, usernameCheckAnimator)
+                showToast(requireContext(), "'$checkedUsername' has been taken. Try a different username")
+            }
+            ERROR -> {
+                stopAnimationWithFailure(checkUsernameImageView, usernameCheckAnimator)
+                showToast(requireContext(), "username verification failed. Check network and try again.")
+            }
+            DEFAULT -> resetAnimation(checkUsernameImageView, usernameCheckAnimator)
+        }
+    }
+
+    private fun handleRegisteringStatus(status: Int) {
+        when (status) {
+            BUSY -> startRegistrationAnimation()
+            PASSED -> stopRegistrationAnimationWithSuccess()
+            FAILED -> {
+                stopRegistrationAnimationWithFailure()
+                showToast(requireContext(), "SignUp failed. Check network and try again.")
             }
         }
     }
@@ -163,7 +177,7 @@ class RegisterFragment : Fragment() {
         registerIconAnimator.start()
     }
 
-    private fun showGenderSelectionPopup(genderSelectionMiniDialog: LinearLayout) {
+    private fun showGenderSelectionPopup(genderSelectionMiniDialog: LinearLayout = genderSelectionPopup) {
         usernameEditText.isEnabled = false
         genderSelectionMiniDialog.visibility = View.VISIBLE
 
@@ -175,10 +189,9 @@ class RegisterFragment : Fragment() {
             appearPropertyValuesHolder
         )
         showGenderSelectionAnimator.start()
-        sharedViewModel.genderSelectionPopupIsShowing = true
     }
 
-    private fun hideGenderSelectionPopup(genderSelectionMiniDialog: LinearLayout) {
+    private fun hideGenderSelectionPopup(genderSelectionMiniDialog: LinearLayout = genderSelectionPopup) {
         usernameEditText.isEnabled = true
         genderSelectionMiniDialog.visibility = View.GONE
 
@@ -190,7 +203,6 @@ class RegisterFragment : Fragment() {
             alphaPropertyValuesHolder
         )
         hideGenderSelectionAnimator.start()
-        sharedViewModel.genderSelectionPopupIsShowing = false
     }
 
     private fun resetAnimation(checkUsernameImageView: ImageView, animator: ObjectAnimator?) {
@@ -230,15 +242,13 @@ class RegisterFragment : Fragment() {
     fun checkUsername(){
         val username = includedBinding.usernameEditText.text.toString()
         if (username.isNotBlank()){
+            checkedUsername = username
             sharedViewModel.checkUsername(username)
         }
-        sharedViewModel.updateSignUpConditionsStatus()
     }
 
     fun onCloseButtonPressed(){
-        if (sharedViewModel.genderSelectionPopupIsShowing){
-            hideGenderSelectionPopup(genderSelectionPopup)
-        }
+        sharedViewModel.hideGenderSelectionPopup()
         fragmentMotionLayout.transitionToStart()
     }
 

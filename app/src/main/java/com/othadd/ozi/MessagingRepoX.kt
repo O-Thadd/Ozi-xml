@@ -13,10 +13,7 @@ import com.othadd.ozi.gaming.GameManager
 import com.othadd.ozi.models.ProfileFetchResponse
 import com.othadd.ozi.models.UsersFetchResponse
 import com.othadd.ozi.network.*
-import com.othadd.ozi.ui.BUSY
-import com.othadd.ozi.ui.DEFAULT
-import com.othadd.ozi.ui.FAILED
-import com.othadd.ozi.ui.PASSED
+import com.othadd.ozi.ui.*
 import com.othadd.ozi.utils.*
 import com.othadd.ozi.workers.SendChatMessageWorker
 import kotlinx.coroutines.*
@@ -42,7 +39,9 @@ class MessagingRepoX(private val oziApp: OziApplication) {
 
     val userIsRegistered = settingsRepo.username().map { it != NO_USERNAME }
     private val _registrationStatus = MutableStateFlow(DEFAULT)
-    val registrationStatus = _registrationStatus.asStateFlow()
+    val registeringStatus = _registrationStatus.asStateFlow()
+    private val _usernameCheckStatus = MutableStateFlow(DEFAULT)
+    val usernameCheckStatus = _usernameCheckStatus.asStateFlow()
 
     private val _users = MutableStateFlow(UsersFetchResponse.getDefault())
     val users = _users.asStateFlow()
@@ -55,7 +54,8 @@ class MessagingRepoX(private val oziApp: OziApplication) {
 
     val darkModeSet = settingsRepo.darkModeFlow()
 
-    val messageRefreshError = MutableStateFlow(Int)
+    private val _refreshError = MutableStateFlow(false)
+    val refreshError = _refreshError.asStateFlow()
 
 
 
@@ -187,6 +187,41 @@ class MessagingRepoX(private val oziApp: OziApplication) {
         scheduleMessageForSendToServer(newMessage)
     }
 
+    suspend fun refreshMessages() {
+        val newMessages: List<NWMessage>
+        try {
+            newMessages = NetworkApi.retrofitService.getMessages(settingsRepo.getUserId())
+            handleReceivedMessages(newMessages)
+            _refreshError.value = false
+        } catch (e: Exception) {
+            _refreshError.value = true
+        }
+    }
+
+    suspend fun checkUsername(username: String) {
+        _usernameCheckStatus.value = BUSY
+        try {
+            val usernameCheckPassed = NetworkApi.retrofitService.checkUsername(username)
+            if (usernameCheckPassed) {
+                _usernameCheckStatus.value = PASSED
+            } else {
+                _usernameCheckStatus.value = FAILED
+            }
+        } catch (e: Exception) {
+            _usernameCheckStatus.value = ERROR
+        }
+    }
+
+    fun resetUsernameCheck() {
+        _usernameCheckStatus.value = DEFAULT
+    }
+
+
+
+
+
+
+
 
     private fun scheduleMessageForSendToServer(newMessage: Message) {
         val newMessageString = messageToString(newMessage)
@@ -283,16 +318,6 @@ class MessagingRepoX(private val oziApp: OziApplication) {
         } catch (e: Exception) {
             throw e
         }
-    }
-
-    suspend fun refreshMessages() {
-
-        val newMessages: List<NWMessage>
-        try {
-            newMessages =
-                NetworkApi.retrofitService.getMessages(settingsRepo.getUserId())
-        } catch (e: Exception) { throw e }
-        handleReceivedMessages(newMessages)
     }
 
     private suspend fun handleReceivedMessages(newMessages: List<NWMessage>) {

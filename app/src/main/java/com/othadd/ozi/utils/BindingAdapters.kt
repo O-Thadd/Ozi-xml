@@ -4,10 +4,12 @@ import android.widget.ImageView
 import androidx.databinding.BindingAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.othadd.ozi.R
+import com.othadd.ozi.UIMessage
 import com.othadd.ozi.network.FEMALE
 import com.othadd.ozi.network.MALE
 import com.othadd.ozi.network.User
 import com.othadd.ozi.ui.ChatsRecyclerAdapter
+import com.othadd.ozi.ui.MessagesRecyclerAdapter
 import com.othadd.ozi.ui.UIChat
 import com.othadd.ozi.ui.UsersRecyclerAdapter
 
@@ -20,6 +22,12 @@ fun bindChatsListData(recyclerView: RecyclerView, chatsList: List<UIChat>?) {
 @BindingAdapter("listData")
 fun bindUsersListData(recyclerView: RecyclerView, usersList: List<User>?) {
     val adapter = recyclerView.adapter as UsersRecyclerAdapter
+    adapter.submitList(usersList)
+}
+
+@BindingAdapter("listData")
+fun bindMessagesListData(recyclerView: RecyclerView, usersList: List<UIMessage>?) {
+    val adapter = recyclerView.adapter as MessagesRecyclerAdapter
     adapter.submitList(usersList)
 }
 

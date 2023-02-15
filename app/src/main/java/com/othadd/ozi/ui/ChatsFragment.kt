@@ -24,6 +24,8 @@ import androidx.navigation.fragment.findNavController
 import com.othadd.ozi.*
 import com.othadd.ozi.databinding.FragmentChatsBinding
 import com.othadd.ozi.utils.GAME_REQUEST_NOTIFICATION_CHANNEL_ID
+import com.othadd.ozi.utils.showNetworkErrorToast
+import com.othadd.ozi.utils.showToast
 import dagger.hilt.android.AndroidEntryPoint
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -81,23 +83,15 @@ class ChatsFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        if (!sharedViewModel.chatStartedByActivity) {
-            sharedViewModel.refreshMessages("Could not refresh chats")
-        }
+//        if (!sharedViewModel.chatStartedByActivity) {
+            sharedViewModel.refreshMessages()
+//        }
 
         (ContextCompat.getSystemService(requireContext(), NotificationManager::class.java) as NotificationManager).cancelAll()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-//        menuOverlay = binding.menuOverlayView
-//        snackBar = binding.snackbarLinearLayout
-//        snackBarActionButton = binding.snackBarActionButtonTextView
-//        snackBarCloseButton = binding.closeSnackBarButtonImageView
-//        findOthersTextView = binding.findOthersButtonTextView
-//        menuListLinearLayout = binding.menuListLinearLayout
-//        snackBarHeight = snackBar.height.toFloat()
 
         binding.apply {
             menuOverlay = menuOverlayView
@@ -109,15 +103,10 @@ class ChatsFragment : Fragment() {
         }
         snackBarHeight = snackBar.height.toFloat()
 
-
         sharedViewModel.chatsFragmentUIState.observe(viewLifecycleOwner){
             handleChatsForEmptyState(it.chats)
             handleDarkMode(it.darkModeSet)
         }
-
-//        sharedViewModel.chats.observe(viewLifecycleOwner) {
-//            handleChatsForEmptyState(it)
-//        }
 
         sharedViewModel.navigateToChatFragment.observe(viewLifecycleOwner) {
             if (it) {
@@ -128,7 +117,6 @@ class ChatsFragment : Fragment() {
         sharedViewModel.snackBarState.observe(viewLifecycleOwner) {
             when {
                 it.showActionButton -> {
-//                    snackBar.visibility = View.VISIBLE
                     snackBarActionButton.visibility = View.VISIBLE
                     snackBarCloseButton.visibility = View.VISIBLE
                     snackBarHeight = snackBar.height.toFloat()
@@ -136,7 +124,6 @@ class ChatsFragment : Fragment() {
                 }
 
                 !it.showActionButton && it.message != "" -> {
-//                    snackBar.visibility = View.VISIBLE
                     snackBarActionButton.visibility = View.GONE
                     snackBarCloseButton.visibility = View.GONE
                     snackBarHeight = snackBar.height.toFloat()
@@ -149,10 +136,11 @@ class ChatsFragment : Fragment() {
             }
         }
 
-//        sharedViewModel.darkMode.observe(viewLifecycleOwner){
-//            handleDarkMode(it)
-//        }
-
+        sharedViewModel.refreshError.observe(viewLifecycleOwner){
+            if (it) {
+                showToast(requireContext(), "could not refresh chats")
+            }
+        }
     }
 
     private fun handleDarkMode(darkModeSet: Boolean) {

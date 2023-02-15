@@ -22,15 +22,21 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.othadd.ozi.*
 import com.othadd.ozi.database.ChatDao
+import com.othadd.ozi.database.DialogState
 import com.othadd.ozi.database.NOTIFY_DIALOG_TYPE
 import com.othadd.ozi.database.PROMPT_DIALOG_TYPE
 import com.othadd.ozi.databinding.FragmentChatBinding
 import com.othadd.ozi.utils.SettingsRepo
+import com.othadd.ozi.utils.showNetworkErrorToast
+import com.othadd.ozi.utils.showToast
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
@@ -107,7 +113,7 @@ class ChatFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        sharedViewModel.refreshMessages("Could not refresh messages")
+        sharedViewModel.refreshMessages()
         sharedViewModel.resetNavigateChatsToChatFragment()
         sharedViewModel.markMessagesRead()
         sharedViewModel.resetChatStartedByActivity()
@@ -127,36 +133,29 @@ class ChatFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        confirmSendGameRequestDialog = binding.confirmSendGameDialogConstraintLayout
-        promptDialog = binding.promptDialogConstraintLayout
-        notifyDialog = binding.notifyDialogConstraintLayout
-        screenView = binding.dialogOverlayScreenView
-        messagesRecyclerView = binding.messagesRecyclerView
-        snackBar = binding.snackBarLinearLayout
-        snackBarActionButton = binding.snackBarActionButtonTextView
-        snackBarCloseButton = binding.closeSnackBarButtonImageView
-        typeMessageEditTextGroup = binding.bottomConstraintLayout
-        snackBarHeight = snackBar.height.toFloat()
-        newMessageGameModeEditText = binding.newMessageGameModeEditText
-        newMessageEditText = binding.newMessageEditText
+        binding.apply {
+            confirmSendGameRequestDialog = confirmSendGameDialogConstraintLayout
+            promptDialog = promptDialogConstraintLayout
+            notifyDialog = notifyDialogConstraintLayout
+            screenView = dialogOverlayScreenView
+            this@ChatFragment.messagesRecyclerView = messagesRecyclerView
+            snackBar = snackBarLinearLayout
+            snackBarActionButton = snackBarActionButtonTextView
+            snackBarCloseButton = closeSnackBarButtonImageView
+            typeMessageEditTextGroup = bottomConstraintLayout
+            snackBarHeight = snackBar.height.toFloat()
+            this@ChatFragment.newMessageGameModeEditText = newMessageGameModeEditText
+            this@ChatFragment.newMessageEditText = newMessageEditText
+        }
 
-        sharedViewModel.chat.observe(viewLifecycleOwner) { dbChat ->
-            val messages = dbChat.messages.sortedBy { it.dateTime }
-            val uiMessages = messages.map { it.toUIMessage(sharedViewModel.thisUserId) }
-            messagesRecyclerAdapter.submitList(uiMessages)
+        sharedViewModel.chat.observe(viewLifecycleOwner) { chat ->
+            chatMateUserId = chat.chatMateId
 
-            binding.verificationStatusIndicatorImageView.visibility =
-                if (dbChat.verificationStatus) View.VISIBLE else View.GONE
-            binding.onlineTextTextView.visibility =
-                if (dbChat.onlineStatus) View.VISIBLE else View.GONE
+            handleVerificationStatus(chat.verificationStatus)
 
-            if (dbChat.messages.isEmpty()) {
-                messagesRecyclerView.visibility = View.GONE
-                binding.emptyStateLinearLayout.visibility = View.VISIBLE
-            } else {
-                messagesRecyclerView.visibility = View.VISIBLE
-                binding.emptyStateLinearLayout.visibility = View.GONE
-            }
+            handleEmptyState(chat.messages.isEmpty())
+
+            handleDialog(chat.dialogState)
         }
 
         sharedViewModel.markAllMessagesSent.observe(viewLifecycleOwner) {
@@ -164,9 +163,7 @@ class ChatFragment : Fragment() {
         }
 
         sharedViewModel.shouldScrollChat.observe(viewLifecycleOwner) {
-            if (it) {
-                smoothScrollToRecyclerBottom()
-            }
+            if (it) { smoothScrollToRecyclerBottom() }
         }
 
 
@@ -176,41 +173,19 @@ class ChatFragment : Fragment() {
         )
 
 
-        sharedViewModel.chat.observe(viewLifecycleOwner) {
-
-            chatMateUserId = it.chatMateId
-
-            when (it.dialogState.dialogType) {
-
-                NOTIFY_DIALOG_TYPE -> {
-                    if (it.dialogState.showOkayButton) {
-                        binding.notifyDialogOkButtonTextView.visibility = View.VISIBLE
-                    } else {
-                        binding.notifyDialogOkButtonTextView.visibility = View.GONE
-                    }
-                    showDialog(notifyDialog)
-                }
-
-                PROMPT_DIALOG_TYPE -> {
-                    showDialog(promptDialog)
-                }
-
-//                no dialog state
-                else -> {
-                    hideAllDialogs()
-                }
-            }
-        }
+//        sharedViewModel.chat.observe(viewLifecycleOwner) {
+//            handleDialog(it.dialogState)
+//        }
 
         sharedViewModel.snackBarState.observe(viewLifecycleOwner) {
             when {
 
-//                promptSnackBar case
+                //promptSnackBar case
                 it.showActionButton -> {
-//                    the aim for the conditional is to verify that the game request sender isn't the one whose chat is currently open.
-//                    this check is happening within the promptSnackbar case on the assumption that all promptSnackbars are new game requests.
-//                    that is currently true, but that may change in the future and inwhich case this check will have to be reimplemented.
-//                    consider adding a field to the snackbarstate class to indicate the nature of info such as 'network', 'game request', etc.
+                    //the aim for the following conditional is to verify that the game request sender isn't the one whose chat is currently open.
+                    //this check is happening within the promptSnackbar case on the assumption that all promptSnackbars are new game requests.
+                    //that is currently true, but that may change in the future and inwhich case this check will have to be reimplemented.
+                    //consider adding a field to the snackbarstate class to indicate the nature of info such as 'network', 'game request', etc.
                     if (chatMateUserId != sharedViewModel.getGameRequestSenderId()) {
                         snackBarActionButton.visibility = View.VISIBLE
                         snackBarCloseButton.visibility = View.VISIBLE
@@ -219,7 +194,7 @@ class ChatFragment : Fragment() {
                     }
                 }
 
-//                updateSnackBar case
+                //updateSnackBar case
                 !it.showActionButton && it.message != "" -> {
                     snackBarActionButton.visibility = View.GONE
                     snackBarCloseButton.visibility = View.GONE
@@ -227,7 +202,7 @@ class ChatFragment : Fragment() {
                     showSnackBar()
                 }
 
-//                no snackBar case
+                //no snackBar case
                 it.message == "" -> {
                     hideSnackBar()
                 }
@@ -245,6 +220,52 @@ class ChatFragment : Fragment() {
             if (it) enableGameModeKeyboard() else disableGameModeKeyboard()
         }
 
+        sharedViewModel.refreshError.observe(viewLifecycleOwner){
+            if (it) {
+                showToast(requireContext(), "could not refresh messages")
+            }
+        }
+
+    }
+
+    private fun handleDialog(dialog: DialogState) {
+        when (dialog.dialogType) {
+            NOTIFY_DIALOG_TYPE -> {
+                if (dialog.showOkayButton) {
+                    binding.notifyDialogOkButtonTextView.visibility = View.VISIBLE
+                } else {
+                    binding.notifyDialogOkButtonTextView.visibility = View.GONE
+                }
+                lifecycleScope.launch { showDialog(notifyDialog) }
+            }
+
+            PROMPT_DIALOG_TYPE -> {
+                lifecycleScope.launch { showDialog(promptDialog) }
+    //                    showDialog(promptDialog)
+            }
+
+    //                no dialog state
+            else -> {
+                hideAllDialogs()
+            }
+        }
+    }
+
+    private fun handleEmptyState(chatIsEmpty: Boolean) {
+        if (chatIsEmpty) {
+            messagesRecyclerView.visibility = View.GONE
+            binding.emptyStateLinearLayout.visibility = View.VISIBLE
+        } else {
+            messagesRecyclerView.visibility = View.VISIBLE
+            binding.emptyStateLinearLayout.visibility = View.GONE
+        }
+    }
+
+    private fun handleVerificationStatus(status: Boolean) {
+        binding.verificationStatusIndicatorImageView.visibility =
+            if (status) View.VISIBLE else View.GONE
+        binding.onlineTextTextView.visibility =
+            if (status) View.VISIBLE else View.GONE
     }
 
     private fun showSnackBar() {
@@ -288,26 +309,13 @@ class ChatFragment : Fragment() {
     }
 
     private fun viewIsVisible(view: View?): Boolean {
-//        if (view == null) {
-//            return false
-//        }
-//        if (!view.isShown) {
-//            return false
-//        }
-//        val screenWidth = Resources.getSystem().displayMetrics.widthPixels
-//        val screenHeight = Resources.getSystem().displayMetrics.heightPixels
-//        val actualPosition = Rect()
-//        view.getGlobalVisibleRect(actualPosition)
-//        val screen = Rect(0, 0, screenWidth, screenHeight)
-//        return actualPosition.intersect(screen)
-
         return view?.alpha != 0.0f
     }
 
     private fun observeDataForDialog(data: LiveData<Boolean>, dialog: View) {
         data.observe(viewLifecycleOwner) {
             if (it) {
-                showDialog(dialog)
+                lifecycleScope.launch { showDialog(dialog) }
             } else {
                 hideDialog(dialog)
             }
@@ -350,7 +358,7 @@ class ChatFragment : Fragment() {
         sharedViewModel.cancelSendGameRequest()
     }
 
-    private fun showDialog(dialog: View) {
+    private suspend fun showDialog(dialog: View) {
 
         if (viewIsVisible(dialog)) {
             return
@@ -358,9 +366,13 @@ class ChatFragment : Fragment() {
 
         hideAllDialogs()
         backPressedCallback.isEnabled = true
-        screenView.visibility = View.VISIBLE
+
         hideKeyboard()
 
+        //without this delay, the dialog is not centered if it is shown while the keyboard is visible
+        delay(200L)
+
+        screenView.visibility = View.VISIBLE
         val parent = dialog.parent as ViewGroup
 
         val movePropertyValueHolder = PropertyValuesHolder.ofFloat(

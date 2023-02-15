@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.othadd.ozi.Message
 import com.othadd.ozi.ui.UIChat
+import com.othadd.ozi.ui.UIChat2
 import java.text.DateFormat
 import java.util.*
 
@@ -23,28 +24,29 @@ data class DBChat(
     fun addMessages(newMessages: List<Message>) {
         messages.addAll(newMessages)
     }
-    fun addMessage(newMessage: Message){
+
+    fun addMessage(newMessage: Message) {
         messages.add(newMessage)
         hasUnreadMessage = true
     }
 
     fun lastMessage() = this.messages.maxByOrNull { it.dateTime }
 
-    fun markAllMessagesSent(){
-        for (message: Message in messages){
+    fun markAllMessagesSent() {
+        for (message: Message in messages) {
             message.sent = true
         }
     }
 
-    fun markMessagesRead(){
+    fun markMessagesRead() {
         hasUnreadMessage = false
     }
 }
 
-fun List<DBChat>.toUIChat(): List<UIChat>{
+fun List<DBChat>.toUIChat(): List<UIChat> {
     return this.map { dbChat ->
 
-        if (dbChat.messages.isNotEmpty()){
+        if (dbChat.messages.isNotEmpty()) {
             val lastMessage = dbChat.lastMessage()!!
 
             val format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
@@ -52,10 +54,17 @@ fun List<DBChat>.toUIChat(): List<UIChat>{
             calendarObject.timeInMillis = lastMessage.dateTime
             val date = calendarObject.time
 
-            return@map UIChat(dbChat.chatMateId, dbChat.chatMateUsername, lastMessage.body, format.format(date), dbChat.chatMateGender, dbChat.hasUnreadMessage, dbChat.onlineStatus, dbChat.verificationStatus)
-        }
-
-        else return@map UIChat(
+            return@map UIChat(
+                dbChat.chatMateId,
+                dbChat.chatMateUsername,
+                lastMessage.body,
+                format.format(date),
+                dbChat.chatMateGender,
+                dbChat.hasUnreadMessage,
+                dbChat.onlineStatus,
+                dbChat.verificationStatus
+            )
+        } else return@map UIChat(
             dbChat.chatMateId,
             dbChat.chatMateUsername,
             "",
@@ -67,4 +76,9 @@ fun List<DBChat>.toUIChat(): List<UIChat>{
         )
 
     }
+}
+
+fun DBChat.toUIChat2(thisUserId: String): UIChat2 {
+    val messages = messages.sortedBy { it.dateTime }.map { it.toUIMessage(thisUserId) }
+    return UIChat2(chatMateId, messages, chatMateUsername, chatMateGender, dialogState, hasUnreadMessage, onlineStatus, verificationStatus)
 }

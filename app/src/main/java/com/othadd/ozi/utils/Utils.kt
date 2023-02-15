@@ -109,6 +109,10 @@ const val defaultNetworkErrorMessage =
     "Network Error. Please check your internet connection and try again."
 
 fun showNetworkErrorToast(context: Context, message: String = defaultNetworkErrorMessage) {
+    showToast(context, message)
+}
+
+fun showToast(context: Context, message: String) {
     if (OziApplication.inForeGround) {
         Toast.makeText(context, message, Toast.LENGTH_LONG).show()
     }
