@@ -83,9 +83,9 @@ class ChatsFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-//        if (!sharedViewModel.chatStartedByActivity) {
+        if (!sharedViewModel.chatStartedByActivity) {
             sharedViewModel.refreshMessages()
-//        }
+        }
 
         (ContextCompat.getSystemService(requireContext(), NotificationManager::class.java) as NotificationManager).cancelAll()
     }

@@ -5,6 +5,7 @@ import com.othadd.ozi.MessagingRepoX
 import com.othadd.ozi.OziApplication
 import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.database.ChatRoomDatabase
+import com.othadd.ozi.gaming.GameManager
 import com.othadd.ozi.utils.SettingsRepo
 import dagger.Module
 import dagger.Provides
@@ -36,5 +37,10 @@ object Module {
     @Provides
     fun provideOziApp(@ApplicationContext context: Context): OziApplication{
         return context as OziApplication
+    }
+
+    @Provides
+    fun provideGameManager(@ApplicationContext context: Context, messagingRepoX: MessagingRepoX): GameManager{
+        return GameManager((context as OziApplication),messagingRepoX)
     }
 }

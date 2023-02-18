@@ -18,7 +18,7 @@ const val FINISH_COUNTDOWN_STAGE = "finish"
 class OziCountDownTimer(
     val userId: String,
     private val application: OziApplication,
-    val onCountDownFinish: (OziCountDownTimer, userId: String, timerType: String) -> Unit
+    val onCountDownFinish: (timer: OziCountDownTimer, userId: String, timerType: String) -> Unit
 ) {
 
     private var timer: CountDownTimer? = null

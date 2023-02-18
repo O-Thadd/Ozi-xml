@@ -7,6 +7,7 @@ import com.othadd.ozi.MessagingRepoX
 import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.database.toUIChat
 import com.othadd.ozi.database.toUIChat2
+import com.othadd.ozi.gaming.GameManager
 import com.othadd.ozi.models.ChatsFragmentUIState
 import com.othadd.ozi.models.FindUsersFragmentUIState
 import com.othadd.ozi.models.ProfileFragmentUIState
@@ -33,7 +34,8 @@ const val ERROR = 4
 open class ChatViewModel @Inject constructor(
     private val chatDao: ChatDao,
     private val settingsRepo: SettingsRepo,
-    private val messagingRepoX: MessagingRepoX
+    private val messagingRepoX: MessagingRepoX,
+    private val gameManager: GameManager
 ) : ViewModel() {
 
     private val thisUserId: String = settingsRepo.getUserId()
@@ -65,8 +67,6 @@ open class ChatViewModel @Inject constructor(
             val uiChats = chats.sortedByDescending { it.lastMessage()?.dateTime }.toUIChat()
             ChatsFragmentUIState(darkModeSet, uiChats)
         }.asLiveData()
-
-
 
     private val genderSelectionPopupIsShowing = MutableStateFlow(false)
     private val genderHasBeenSelected = MutableStateFlow(false)
@@ -137,9 +137,9 @@ open class ChatViewModel @Inject constructor(
 
 
 
-    fun sendMessage(messageBody: String, receiverId: String, senderId: String = thisUserId) {
+    fun sendMessage(messageBody: String, receiverId: String) {
         viewModelScope.launch {
-            messagingRepoX.sendMessage(receiverId, messageBody)
+            messagingRepoX.sendChatMessage(messageBody)
         }
     }
 
@@ -237,15 +237,6 @@ open class ChatViewModel @Inject constructor(
         }
     }
 
-
-
-
-
-
-
-
-
-
     fun cancelSendGameRequest() {
         _showConfirmGameRequestDialog.value = false
     }
@@ -281,12 +272,35 @@ open class ChatViewModel @Inject constructor(
         chatStartedByActivity = false
     }
 
-    fun closeSnackBar() {
-        settingsRepo.updateSnackBarState(getNoSnackBarSnackBar())
+    fun toggleDarkMode() {
+        val currentMode = darkMode.value
+        settingsRepo.updateDarkMode(!currentMode!!)
+    }
+
+    fun saveUserId(userId: String) {
+        settingsRepo.updateUserId(userId)
     }
 
     fun goToGameRequestSenderChat() {
-        startChat(messagingRepoX.getGameRequestSenderId())
+//        startChat(messagingRepoX.getGameRequestSenderId())
+        viewModelScope.launch {
+            gameManager.startGameRequestSenderChat()
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+    fun closeSnackBar() {
+        settingsRepo.updateSnackBarState(getNoSnackBarSnackBar())
     }
 
     fun snackBarNavigateToChatFromChatFragment() {
@@ -298,36 +312,31 @@ open class ChatViewModel @Inject constructor(
         return messagingRepoX.getGameRequestSenderId()
     }
 
-    fun toggleDarkMode() {
-        val currentMode = darkMode.value
-        settingsRepo.updateDarkMode(!currentMode!!)
-    }
-
-    fun refreshUserStatus(userId: String = currentChatChatMateId) {
+    fun refreshUserStatus() {
         viewModelScope.launch {
             try {
-                messagingRepoX.refreshUser(userId)
+                messagingRepoX.refreshUser()
             } catch (e: Exception) {
                 Log.e("viewModel", "error refreshing user status. $e")
             }
         }
 
-        viewModelScope.launch {
-            try {
-                val user = NetworkApi.retrofitService.getUser(currentChatChatMateId)
-                settingsRepo.updateKeyboardMode(user.gameState == CURRENTLY_PLAYING_GAME_STATE)
-            } catch (e: Exception) {
-                Log.e(
-                    "viewModel",
-                    "error getting keyboard mode for chatmate in refreshUserStatus() $e"
-                )
-            }
-        }
+
+        // upper part of method fixed, following part should be fixed next.
+//        viewModelScope.launch {
+//            try {
+//                val user = NetworkApi.retrofitService.getUser(currentChatChatMateId)
+//                settingsRepo.updateKeyboardMode(user.gameState == CURRENTLY_PLAYING_GAME_STATE)
+//            } catch (e: Exception) {
+//                Log.e(
+//                    "viewModel",
+//                    "error getting keyboard mode for chatmate in refreshUserStatus() $e"
+//                )
+//            }
+//        }
     }
 
-    fun saveUserId(userId: String) {
-        settingsRepo.updateUserId(userId)
-    }
+
 
 
     init {

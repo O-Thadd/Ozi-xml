@@ -25,7 +25,7 @@ interface ChatDao {
     fun getChatByChatmateIdFlow(chatMateId: String): Flow<DBChat>
 
     @Query("SELECT * from chat WHERE chatMateId = :chatMateId")
-    fun getChatByChatmateId(chatMateId: String): DBChat
+    fun getChatByChatmateId(chatMateId: String): DBChat?
 
     @Query("SELECT * from chat WHERE chatMateUsername = :chatMateUsername")
     fun getChatByChatmateUsername(chatMateUsername: String): Flow<DBChat>

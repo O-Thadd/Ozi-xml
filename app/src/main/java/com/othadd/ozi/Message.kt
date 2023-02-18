@@ -36,7 +36,7 @@ data class Message(
     var id: String = UUID.randomUUID().toString()
     var type: String = CHAT_MESSAGE_TYPE
     var senderType: String = CHAT_MATE_SENDER_TYPE
-    var messagePackage: String = "null" // if message with a package has to be sent. then the package field must be updated immediately after message construction
+    var messagePackage: String = NOT_INITIALIZED // if message with a package has to be sent. then the package field must be updated immediately after message construction
 
 
     //this field is only relevant for sent messages. completely irrelevant for received messages.
