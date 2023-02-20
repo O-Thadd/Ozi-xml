@@ -22,7 +22,7 @@ private val moshi = Moshi.Builder()
     .build()
 
 private val interceptor = HttpLoggingInterceptor()
-    .setLevel(HttpLoggingInterceptor.Level.BASIC)
+    .setLevel(HttpLoggingInterceptor.Level.BODY)
 
 private val client = OkHttpClient.Builder()
     .addInterceptor(interceptor)

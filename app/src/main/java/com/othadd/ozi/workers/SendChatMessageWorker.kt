@@ -21,10 +21,10 @@ class SendChatMessageWorker(appContext: Context, workerParams: WorkerParameters)
         var result: Result? = null
         scope.launch {
             result = try {
+                SettingsRepo(applicationContext).updateMarkSent(false)
                 val message = stringToMessage(inputData.getString(WORKER_MESSAGE_KEY)!!)
                 MessagingRepoX(applicationContext as OziApplication).sendMessageToServer(message)
                 SettingsRepo(applicationContext).updateMarkSent(true)
-                SettingsRepo(applicationContext).updateMarkSent(false)
                 Result.success()
             } catch (throwable: Throwable) {
                 Log.e("Worker send chat message", throwable.message.toString())

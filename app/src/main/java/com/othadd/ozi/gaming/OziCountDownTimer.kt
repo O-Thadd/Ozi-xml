@@ -6,8 +6,10 @@ import com.othadd.ozi.R
 import com.othadd.ozi.database.DialogState
 import com.othadd.ozi.database.getNotifyDialogType
 import com.othadd.ozi.database.getPromptDialogType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 const val TIMER_TO_RECEIVE_RESPONSE = "timer to receive response"
 const val TIMER_TO_RESPOND = "timer to respond"
@@ -25,7 +27,7 @@ class OziCountDownTimer(
     private lateinit var type: String
 
     private val chatDao = application.database.chatDao()
-    private suspend fun getChat() = chatDao.getChatByChatmateIdFlow(userId).first()
+    private suspend fun getChat() = withContext(Dispatchers.IO){ chatDao.getChatByChatmateId(userId)!! }
     private suspend fun getUsername() = getChat().chatMateUsername
 
     private suspend fun getDialog(countDownTime: Int, countDownStage: String): DialogState {
@@ -92,6 +94,7 @@ class OziCountDownTimer(
     }
 
     fun stop() {
+        1+1
         timer?.cancel()
     }
 

@@ -29,6 +29,7 @@ object Module {
         return SettingsRepo(context)
     }
 
+    @Singleton
     @Provides
     fun provideMessagingRepo(@ApplicationContext context: Context): MessagingRepoX{
         return MessagingRepoX(context as OziApplication)
@@ -39,6 +40,7 @@ object Module {
         return context as OziApplication
     }
 
+    @Singleton
     @Provides
     fun provideGameManager(@ApplicationContext context: Context, messagingRepoX: MessagingRepoX): GameManager{
         return GameManager((context as OziApplication),messagingRepoX)

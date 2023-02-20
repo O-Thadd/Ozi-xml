@@ -19,6 +19,19 @@ const val CARRYING_GAME_MODERATOR_ID_CONTENT_DESC = "carrying game moderator id"
 // TODO: remove oziApp as constructor parameter after refactoring is complete
 class GameManager(private val oziApp: OziApplication, private val messagingRepo: MessagingRepoX) {
 
+    companion object{
+        private var INSTANCE: GameManager? = null
+
+        fun getInstance(oziApp: OziApplication, messagingRepo: MessagingRepoX): GameManager{
+            if(INSTANCE != null){
+                return INSTANCE as GameManager
+            }
+
+            INSTANCE = GameManager(oziApp, messagingRepo)
+            return INSTANCE as GameManager
+        }
+    }
+
     private val chatMateId get() = messagingRepo.chatMateId.value
     private val thisUserId get() = messagingRepo.thisUserId
 
@@ -73,26 +86,48 @@ class GameManager(private val oziApp: OziApplication, private val messagingRepo:
     }
 
     private fun findOrCreateTimer(userId: String): OziCountDownTimer {
-        return timers.find { it.userId == userId } ?: OziCountDownTimer(userId, oziApp) { countDownTimer, chatMateId, timerType ->
-            timers.remove(countDownTimer)
-            if (currentPromptType == RESPOND_TO_GAME_REQUEST_PROMPT_TYPE) {
-                respondToServerDeclineGameRequest(chatMateId)
-                currentPromptType = DUMMY_STRING
-            }
+        var timer = timers.find { it.userId == userId }
+        if (timer == null){
+            timer = OziCountDownTimer(userId, oziApp) { countDownTimer, chatMateId, timerType ->
+                timers.remove(countDownTimer)
+                if (currentPromptType == RESPOND_TO_GAME_REQUEST_PROMPT_TYPE) {
+                    respondToServerDeclineGameRequest(chatMateId)
+                    currentPromptType = DUMMY_STRING
+                }
 
-            // if this is a timer to receive a response, then a 'game declined' message has to be sent to self
-            // in order to account for the 'permanent request pending' bug.
-            // (bug is explained in the updateDialogState method in MessagingRepo)
-            if (timerType == TIMER_TO_RECEIVE_RESPONSE) {
-                selfDeclineGameRequest()
+                // if this is a timer to receive a response, then a 'game declined' message has to be sent to self
+                // in order to account for the 'permanent request pending' bug.
+                // (bug is explained in the updateDialogState method in MessagingRepo)
+                if (timerType == TIMER_TO_RECEIVE_RESPONSE) {
+                    selfDeclineGameRequest()
+                }
             }
         }
+
+        return timer
+
+
+//        return timers.find { it.userId == userId } ?: OziCountDownTimer(userId, oziApp) { countDownTimer, chatMateId, timerType ->
+//            timers.remove(countDownTimer)
+//            if (currentPromptType == RESPOND_TO_GAME_REQUEST_PROMPT_TYPE) {
+//                respondToServerDeclineGameRequest(chatMateId)
+//                currentPromptType = DUMMY_STRING
+//            }
+//
+//            // if this is a timer to receive a response, then a 'game declined' message has to be sent to self
+//            // in order to account for the 'permanent request pending' bug.
+//            // (bug is explained in the updateDialogState method in MessagingRepo)
+//            if (timerType == TIMER_TO_RECEIVE_RESPONSE) {
+//                selfDeclineGameRequest()
+//            }
+//        }
     }
 
     private suspend fun startTimer(userId: String, type: String) {
         val timer = findOrCreateTimer(userId)
         timer.start(type)
         timers.add(timer)
+        1+1
     }
 
     private fun stopTimer(userId: String) {
@@ -217,6 +252,7 @@ class GameManager(private val oziApp: OziApplication, private val messagingRepo:
                         currentPromptType = RESPOND_TO_GAME_REQUEST_PROMPT_TYPE
                         startTimer(message.senderId, TIMER_TO_RESPOND)
                         gameRequestSenderId = message.senderId
+//                        updateDialogState(message.senderId, getPromptDialogType())
                         settingsRepo.updateSnackBarState(
                             getPromptSnackBar(
                                 "${getUsername(message.senderId)} has challenged you!",

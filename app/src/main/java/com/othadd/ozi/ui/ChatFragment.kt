@@ -43,20 +43,6 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class ChatFragment : Fragment() {
 
-//    @Inject
-//    lateinit var chatDao: ChatDao
-//
-//    @Inject
-//    lateinit var messagingRepoX: MessagingRepoX
-//
-//    @Inject
-//    lateinit var settingsRepo: SettingsRepo
-//
-//    private val sharedViewModel: ChatViewModel by activityViewModels {
-//        ChatViewModelFactory( chatDao, settingsRepo, messagingRepoX)
-//    }
-
-
     private val sharedViewModel: ChatViewModel by activityViewModels()
 
     private lateinit var binding: FragmentChatBinding
@@ -325,14 +311,14 @@ class ChatFragment : Fragment() {
     fun sendMessage() {
         if (!gameModeKeyboardEnabled){
             if (!binding.newMessageEditText.text.isNullOrBlank()) {
-                sharedViewModel.sendMessage(binding.newMessageEditText.text.toString(), chatMateUserId)
+                sharedViewModel.sendMessage(binding.newMessageEditText.text.toString())
                 binding.newMessageEditText.text?.clear()
             }
         }
 
         if (gameModeKeyboardEnabled){
             if (!binding.newMessageGameModeEditText.text.isNullOrBlank()) {
-                sharedViewModel.sendMessage(binding.newMessageGameModeEditText.text.toString(), chatMateUserId)
+                sharedViewModel.sendMessage(binding.newMessageGameModeEditText.text.toString())
                 binding.newMessageGameModeEditText.text?.clear()
             }
         }

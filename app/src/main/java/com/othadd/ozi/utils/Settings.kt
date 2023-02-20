@@ -86,12 +86,10 @@ class SettingsRepo(private val context: Context) {
         }
     }
 
-    fun updateScroll(scroll: Boolean) {
-        runBlocking {
+    suspend fun updateScroll(scroll: Boolean) {
             context.dataStore.edit {
                 it[scrollKey] = scroll
             }
-        }
     }
 
     fun scrollFlow(): Flow<Boolean> {

@@ -25,7 +25,7 @@ class MessagingRepoX(private val oziApp: OziApplication) {
 
     private val chatDao = oziApp.database.chatDao()
     private val settingsRepo = SettingsRepo(oziApp)
-    private val gameManager = GameManager(oziApp, this)
+    private val gameManager = GameManager.getInstance(oziApp, this)
 
 
     val thisUserId get() = settingsRepo.getUserId()
@@ -89,8 +89,6 @@ class MessagingRepoX(private val oziApp: OziApplication) {
                     it.markAllMessagesSent()
                     chatDao.update(it)
                 }
-//                chat.markAllMessagesSent()
-//                chatDao.update(chat)
             } catch (e: NullPointerException) {
                 Log.e("messagingRepo", "null pointer exception trying to mark all messages sent")
             }
@@ -105,8 +103,6 @@ class MessagingRepoX(private val oziApp: OziApplication) {
                     it.markMessagesRead()
                     chatDao.update(it)
                 }
-//                chat.markMessagesRead()
-//                chatDao.update(chat)
             } catch (e: NullPointerException) {
                 Log.e("messagingRepo", "null pointer exception trying to mark messages read")
             }
@@ -199,8 +195,11 @@ class MessagingRepoX(private val oziApp: OziApplication) {
         scheduleMessageForSendToServer(message)
     }
 
-    suspend fun sendGamingMessage(message: Message): Boolean{
-        val messagePackage = if(message.messagePackage == NOT_INITIALIZED) MessagePackage() else stringToMessagePackage(message.messagePackage)
+    suspend fun sendGamingMessage(message: Message): Boolean {
+        val messagePackage =
+            if (message.messagePackage == NOT_INITIALIZED) MessagePackage() else stringToMessagePackage(
+                message.messagePackage
+            )
         messagePackage.gameModeratorId = getGameModeratorId()
         val packageString = messagePackageToString(messagePackage)
         message.messagePackage = packageString
@@ -208,12 +207,9 @@ class MessagingRepoX(private val oziApp: OziApplication) {
         return try {
             NetworkApi.retrofitService.sendMessage(message.toNWMessage())
             true
-//            startTimer(receiverId, TIMER_TO_RECEIVE_RESPONSE)
         } catch (e: Exception) {
-            Log.e("messagingRepo", "sendGamingMessage() method. ${e.message?: e}")
+            Log.e("messagingRepo", "sendGamingMessage() method. ${e.message ?: e}")
             false
-//            updateDialogState(receiverId, getNoDialogDialogType())
-//            showNetworkErrorToast(oziApp, "could not send game request")
         }
     }
 
@@ -294,9 +290,11 @@ class MessagingRepoX(private val oziApp: OziApplication) {
             A better implementation would be to just implement a timer on the server side.
          */
 
-        val chat = chatDao.getChatByChatmateId(chatMateId) ?: return
-        chat.dialogState = dialogState
-        chatDao.update(chat)
+        withContext(Dispatchers.IO){
+            val chat = chatDao.getChatByChatmateId(chatMateId) ?: return@withContext
+            chat.dialogState = dialogState
+            chatDao.update(chat)
+        }
     }
 
     fun getGameModeratorId(): String{
@@ -343,19 +341,16 @@ class MessagingRepoX(private val oziApp: OziApplication) {
     }
 
     private suspend fun getChat(userId: String): DBChat? {
-//        val chat: DBChat?
-//        val chatsInDB = chatDao.getChatsFlow().first()
-//        chat = chatsInDB.find { it.chatMateId == userId }
-
-        return withContext(Dispatchers.IO){ chatDao.getChatByChatmateId(userId) }
-
-//        return chat
+        return withContext(Dispatchers.IO) { chatDao.getChatByChatmateId(userId) }
     }
 
     private suspend fun saveMessage(
         newMessage: Message,
         chatMateId: String
     ) {
+        settingsRepo.updateScroll(false)
+        delay(100)
+
         newMessage.dateTime = Calendar.getInstance().timeInMillis
         val resultOfFindChat = findOrCreateChat(chatMateId)
         val chat = resultOfFindChat.first
@@ -366,8 +361,6 @@ class MessagingRepoX(private val oziApp: OziApplication) {
         delay(100L) //if the scroll follows without delay, the screen maybe scrolled just before the latest message has appeared.
         settingsRepo.updateScroll(true)
 
-        delay(100L)
-        settingsRepo.updateScroll(false)
     }
 
     private suspend fun saveOutGoingMessage(newMessage: Message) {
@@ -378,17 +371,27 @@ class MessagingRepoX(private val oziApp: OziApplication) {
     suspend fun saveIncomingMessage(newMessage: Message) {
         val chatMateId = newMessage.senderId
 
-        val delayDuration = try {
-            getPackageFromMessage(newMessage).delayPostingBy
-        } catch (e: Exception) {
-            0
-        }
+        //delayPosting is an older implementation. it indicates only if a message should be delayed or not. And delays by a default of 2secs
+        //delayPostingBy is a newer implementation. it indicates the exact length of time by which a message should be delayed.
+        val delayPosting = try { getPackageFromMessage(newMessage).delayPosting } catch (e: Exception) { false }
+        val delayDuration = try { getPackageFromMessage(newMessage).delayPostingBy } catch (e: Exception) { 0 }
 
-        if (delayDuration == 0) {
+        val scope = CoroutineScope(Dispatchers.IO)
+        scope.launch {
+            if (delayPosting) {
+                delay(2000L)
+                saveMessage(newMessage, chatMateId)
+                return@launch
+            }
+
+            if (delayDuration != 0) {
+                delay(delayDuration.toLong())
+                saveMessage(newMessage, chatMateId)
+                return@launch
+            }
+
             saveMessage(newMessage, chatMateId)
-        } else {
-            delay(delayDuration.toLong())
-            saveMessage(newMessage, chatMateId)
+            return@launch
         }
     }
 
@@ -405,20 +408,7 @@ class MessagingRepoX(private val oziApp: OziApplication) {
         // handle regular chat messages
         val chatMessages = newMessages.filter { it.type == CHAT_MESSAGE_TYPE }
         for (message in chatMessages) {
-
-            val delayPosting = try {
-                getPackageFromMessage(message.toMessage()).delayPosting
-            } catch (e: Exception) {
-                false
-            }
-
-            if (delayPosting) {
-                delay(2000L)
-                saveIncomingMessage(message.toMessage())
-            } else {
-                saveIncomingMessage(message.toMessage())
-            }
-
+            saveIncomingMessage(message.toMessage())
         }
 
 //        handle status update messages

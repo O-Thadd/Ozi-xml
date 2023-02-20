@@ -4,6 +4,7 @@ import android.os.CountDownTimer
 import android.util.Log
 import androidx.lifecycle.*
 import com.othadd.ozi.MessagingRepoX
+import com.othadd.ozi.OziApplication
 import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.database.toUIChat
 import com.othadd.ozi.database.toUIChat2
@@ -35,9 +36,10 @@ open class ChatViewModel @Inject constructor(
     private val chatDao: ChatDao,
     private val settingsRepo: SettingsRepo,
     private val messagingRepoX: MessagingRepoX,
-    private val gameManager: GameManager
+    private val oziApplication: OziApplication
 ) : ViewModel() {
 
+    private val gameManager = GameManager.getInstance(oziApplication, messagingRepoX)
     private val thisUserId: String = settingsRepo.getUserId()
 
     val chats = Transformations.map(messagingRepoX.chats.asLiveData()) { listOfDBChats ->
@@ -137,7 +139,7 @@ open class ChatViewModel @Inject constructor(
 
 
 
-    fun sendMessage(messageBody: String, receiverId: String) {
+    fun sendMessage(messageBody: String) {
         viewModelScope.launch {
             messagingRepoX.sendChatMessage(messageBody)
         }
