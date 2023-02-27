@@ -43,6 +43,6 @@ object Module {
     @Singleton
     @Provides
     fun provideGameManager(@ApplicationContext context: Context, messagingRepoX: MessagingRepoX): GameManager{
-        return GameManager((context as OziApplication),messagingRepoX)
+        return GameManager((context as OziApplication), messagingRepoX)
     }
 }

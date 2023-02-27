@@ -36,14 +36,10 @@ class FindUsersFragment : Fragment() {
     private lateinit var usersRecyclerView: RecyclerView
     private lateinit var couldNotFetchTextView: TextView
     private lateinit var tryAgainTextViewButton: TextView
-    private lateinit var snackBar: LinearLayout
-    private lateinit var snackBarActionButton: TextView
-    private lateinit var snackBarCloseButton: ImageView
     private lateinit var searchLoadingIcon: ImageView
 
     private lateinit var animator: ObjectAnimator
     private lateinit var searchAnimator: ObjectAnimator
-    private var snackBarIsShowing = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -74,9 +70,6 @@ class FindUsersFragment : Fragment() {
         usersRecyclerView = binding.usersRecyclerView
         couldNotFetchTextView = binding.couldNotFetchUsersTextView
         tryAgainTextViewButton = binding.tryAgainButtonTextView
-        snackBar = binding.snackBarLinearLayout
-        snackBarActionButton = binding.snackBarActionButtonTextView
-        snackBarCloseButton = binding.closeSnackBarButtonImageView
         searchLoadingIcon = binding.searchLoadingIconImageView
 
         animator = ObjectAnimator.ofFloat(loadingIcon, View.ROTATION, -360f, 0f)
@@ -98,35 +91,6 @@ class FindUsersFragment : Fragment() {
             handleSearchStatus(it.searchStatus)
         }
 
-//        sharedViewModel.usersFetchStatus.observe(viewLifecycleOwner) {
-//            handleFetchStatus(it)
-//        }
-//
-//        sharedViewModel.searchStatus.observe(viewLifecycleOwner) {
-//            handleSearchStatus(it)
-//        }
-
-        sharedViewModel.snackBarState.observe(viewLifecycleOwner) {
-            when {
-                it.showActionButton -> {
-                    snackBar.visibility = View.VISIBLE
-                    snackBarActionButton.visibility = View.VISIBLE
-                    snackBarCloseButton.visibility = View.VISIBLE
-                    showSnackBar()
-                }
-
-                !it.showActionButton && it.message != "" -> {
-                    snackBar.visibility = View.VISIBLE
-                    snackBarActionButton.visibility = View.GONE
-                    snackBarCloseButton.visibility = View.GONE
-                    showSnackBar()
-                }
-
-                it.message == "" -> {
-                    hideSnackBar()
-                }
-            }
-        }
 
         binding.searchEditText.addTextChangedListener {
             sharedViewModel.getMatchingUsers(it.toString())
@@ -157,37 +121,6 @@ class FindUsersFragment : Fragment() {
                 stopAnimationWithFailure()
             }
         }
-    }
-
-    private fun showSnackBar() {
-        if (snackBarIsShowing) {
-            hideSnackBar()
-        }
-        val moveBottomComponentsUpAnimator =
-            ObjectAnimator.ofFloat(snackBar, View.TRANSLATION_Y, -200f)
-        val showSnackBarAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 0.0f, 1.0f)
-
-        val generalAnimatorSet = AnimatorSet()
-        generalAnimatorSet.playSequentially(moveBottomComponentsUpAnimator, showSnackBarAnimator)
-        generalAnimatorSet.start()
-
-        snackBarIsShowing = true
-    }
-
-    private fun hideSnackBar() {
-        if (!snackBarIsShowing) {
-            return
-        }
-
-        val moveBottomComponentsDownAnimator =
-            ObjectAnimator.ofFloat(snackBar, View.TRANSLATION_Y, 160f)
-        val hideSnackBarAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 1.0f, 0.0f)
-
-        val generalAnimatorSet = AnimatorSet()
-        generalAnimatorSet.playSequentially(hideSnackBarAnimator, moveBottomComponentsDownAnimator)
-        generalAnimatorSet.start()
-
-        snackBarIsShowing = false
     }
 
     private fun stopAnimationWithFailure() {

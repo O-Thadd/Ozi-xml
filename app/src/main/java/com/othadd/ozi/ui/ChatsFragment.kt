@@ -34,21 +34,13 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "se
 @AndroidEntryPoint
 class ChatsFragment : Fragment() {
 
-
     private val sharedViewModel: ChatViewModel by activityViewModels()
 
     private lateinit var binding: FragmentChatsBinding
     private lateinit var chatsRecyclerAdapter: ChatsRecyclerAdapter
     private lateinit var menuOverlay: View
-    private lateinit var snackBar: LinearLayout
-    private lateinit var snackBarActionButton: TextView
-    private lateinit var snackBarCloseButton: ImageView
     private lateinit var findOthersTextView: TextView
     private lateinit var menuListLinearLayout: LinearLayout
-
-    private var snackBarIsShowing = false
-    private var snackBarHeight: Float = 0f
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -95,13 +87,9 @@ class ChatsFragment : Fragment() {
 
         binding.apply {
             menuOverlay = menuOverlayView
-            snackBar = snackbarLinearLayout
-            snackBarActionButton = snackBarActionButtonTextView
-            snackBarCloseButton = closeSnackBarButtonImageView
             findOthersTextView = findOthersButtonTextView
             this@ChatsFragment.menuListLinearLayout = menuListLinearLayout
         }
-        snackBarHeight = snackBar.height.toFloat()
 
         sharedViewModel.chatsFragmentUIState.observe(viewLifecycleOwner){
             handleChatsForEmptyState(it.chats)
@@ -111,28 +99,6 @@ class ChatsFragment : Fragment() {
         sharedViewModel.navigateToChatFragment.observe(viewLifecycleOwner) {
             if (it) {
                 findNavController().navigate(ChatsFragmentDirections.actionChatsFragmentToChatFragment())
-            }
-        }
-
-        sharedViewModel.snackBarState.observe(viewLifecycleOwner) {
-            when {
-                it.showActionButton -> {
-                    snackBarActionButton.visibility = View.VISIBLE
-                    snackBarCloseButton.visibility = View.VISIBLE
-                    snackBarHeight = snackBar.height.toFloat()
-                    showSnackBar()
-                }
-
-                !it.showActionButton && it.message != "" -> {
-                    snackBarActionButton.visibility = View.GONE
-                    snackBarCloseButton.visibility = View.GONE
-                    snackBarHeight = snackBar.height.toFloat()
-                    showSnackBar()
-                }
-
-                it.message == "" -> {
-                    hideSnackBar()
-                }
             }
         }
 
@@ -179,40 +145,6 @@ class ChatsFragment : Fragment() {
     fun goToProfileFragment() {
         hideMenu()
         findNavController().navigate(ChatsFragmentDirections.actionChatsFragmentToProfileFragment())
-    }
-
-    private fun showSnackBar() {
-
-        val moveFindOthersButtonUpAnimator = ObjectAnimator.ofFloat(findOthersTextView, View.TRANSLATION_Y, -snackBarHeight)
-        val moveSnackBarUpAnimator =
-            ObjectAnimator.ofFloat(snackBar, View.TRANSLATION_Y, -snackBarHeight)
-        val moveUpAnimatorSet = AnimatorSet()
-        moveUpAnimatorSet.playTogether(moveFindOthersButtonUpAnimator, moveSnackBarUpAnimator)
-
-        val showSnackBarAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 1.0f, 1.0f)
-
-        val generalAnimatorSet = AnimatorSet()
-        generalAnimatorSet.playSequentially(moveUpAnimatorSet, showSnackBarAnimator)
-        generalAnimatorSet.start()
-
-        snackBarIsShowing = true
-    }
-
-    private fun hideSnackBar() {
-
-        val moveFindOthersButtonDownAnimator = ObjectAnimator.ofFloat(findOthersTextView, View.TRANSLATION_Y, 0f)
-        val moveSnackBarDownAnimator =
-            ObjectAnimator.ofFloat(snackBar, View.TRANSLATION_Y, 0f)
-        val moveDownAnimatorSet = AnimatorSet()
-        moveDownAnimatorSet.playTogether(moveFindOthersButtonDownAnimator, moveSnackBarDownAnimator)
-
-        val hideSnackBarAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 1.0f, 1.0f)
-
-        val generalAnimatorSet = AnimatorSet()
-        generalAnimatorSet.playSequentially(hideSnackBarAnimator, moveDownAnimatorSet)
-        generalAnimatorSet.start()
-
-        snackBarIsShowing = false
     }
 
     private fun createChannel(channelId: String, channelName: String, description: String) {

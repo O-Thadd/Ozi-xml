@@ -51,20 +51,15 @@ class ChatFragment : Fragment() {
     private lateinit var promptDialog: ConstraintLayout
     private lateinit var notifyDialog: ConstraintLayout
     private lateinit var screenView: View
-    private lateinit var snackBar: LinearLayout
-    private lateinit var snackBarActionButton: TextView
-    private lateinit var snackBarCloseButton: ImageView
     private lateinit var messagesRecyclerView: RecyclerView
     private lateinit var typeMessageEditTextGroup: ConstraintLayout
     private lateinit var newMessageGameModeEditText: EditText
     private lateinit var newMessageEditText: EditText
 
-    private var snackBarIsShowing = false
     private var chatSwitchBySnackBar = false
     private var chatFragmentWasClosed = true
     private lateinit var backPressedCallback: OnBackPressedCallback
     private lateinit var chatMateUserId: String
-    private var snackBarHeight: Float = 0f
 
     private var gameModeKeyboardEnabled = false
 
@@ -97,6 +92,16 @@ class ChatFragment : Fragment() {
         return binding.root
     }
 
+    override fun onStop() {
+        super.onStop()
+        sharedViewModel.updateChatFragmentShowing(false)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        sharedViewModel.updateChatFragmentShowing(true)
+    }
+
     override fun onResume() {
         super.onResume()
         sharedViewModel.refreshMessages()
@@ -125,11 +130,7 @@ class ChatFragment : Fragment() {
             notifyDialog = notifyDialogConstraintLayout
             screenView = dialogOverlayScreenView
             this@ChatFragment.messagesRecyclerView = messagesRecyclerView
-            snackBar = snackBarLinearLayout
-            snackBarActionButton = snackBarActionButtonTextView
-            snackBarCloseButton = closeSnackBarButtonImageView
             typeMessageEditTextGroup = bottomConstraintLayout
-            snackBarHeight = snackBar.height.toFloat()
             this@ChatFragment.newMessageGameModeEditText = newMessageGameModeEditText
             this@ChatFragment.newMessageEditText = newMessageEditText
         }
@@ -158,42 +159,6 @@ class ChatFragment : Fragment() {
             confirmSendGameRequestDialog
         )
 
-
-//        sharedViewModel.chat.observe(viewLifecycleOwner) {
-//            handleDialog(it.dialogState)
-//        }
-
-        sharedViewModel.snackBarState.observe(viewLifecycleOwner) {
-            when {
-
-                //promptSnackBar case
-                it.showActionButton -> {
-                    //the aim for the following conditional is to verify that the game request sender isn't the one whose chat is currently open.
-                    //this check is happening within the promptSnackbar case on the assumption that all promptSnackbars are new game requests.
-                    //that is currently true, but that may change in the future and inwhich case this check will have to be reimplemented.
-                    //consider adding a field to the snackbarstate class to indicate the nature of info such as 'network', 'game request', etc.
-                    if (chatMateUserId != sharedViewModel.getGameRequestSenderId()) {
-                        snackBarActionButton.visibility = View.VISIBLE
-                        snackBarCloseButton.visibility = View.VISIBLE
-                        snackBarHeight = snackBar.height.toFloat()
-                        showSnackBar()
-                    }
-                }
-
-                //updateSnackBar case
-                !it.showActionButton && it.message != "" -> {
-                    snackBarActionButton.visibility = View.GONE
-                    snackBarCloseButton.visibility = View.GONE
-                    snackBarHeight = snackBar.height.toFloat()
-                    showSnackBar()
-                }
-
-                //no snackBar case
-                it.message == "" -> {
-                    hideSnackBar()
-                }
-            }
-        }
 
         sharedViewModel.navigateToChatsFragment.observe(viewLifecycleOwner) {
             if (it && chatSwitchBySnackBar) {
@@ -227,7 +192,6 @@ class ChatFragment : Fragment() {
 
             PROMPT_DIALOG_TYPE -> {
                 lifecycleScope.launch { showDialog(promptDialog) }
-    //                    showDialog(promptDialog)
             }
 
     //                no dialog state
@@ -252,46 +216,6 @@ class ChatFragment : Fragment() {
             if (status) View.VISIBLE else View.GONE
         binding.onlineTextTextView.visibility =
             if (status) View.VISIBLE else View.GONE
-    }
-
-    private fun showSnackBar() {
-
-        val moveTypeMessageGroupUpAnimator =
-            ObjectAnimator.ofFloat(
-                typeMessageEditTextGroup,
-                View.TRANSLATION_Y,
-                -snackBarHeight
-            )
-        val moveSnackBarUpAnimator =
-            ObjectAnimator.ofFloat(snackBar, View.TRANSLATION_Y, -snackBarHeight)
-        val moveUpAnimatorSet = AnimatorSet()
-        moveUpAnimatorSet.playTogether(moveTypeMessageGroupUpAnimator, moveSnackBarUpAnimator)
-
-        val showSnackBarAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 0.0f, 1.0f)
-
-        val generalAnimatorSet = AnimatorSet()
-        generalAnimatorSet.playSequentially(moveUpAnimatorSet, showSnackBarAnimator)
-        generalAnimatorSet.start()
-
-        snackBarIsShowing = true
-    }
-
-    private fun hideSnackBar() {
-
-        val moveTypeMessageGroupDownAnimator =
-            ObjectAnimator.ofFloat(typeMessageEditTextGroup, View.TRANSLATION_Y, 0f)
-        val moveSnackBarDownAnimator =
-            ObjectAnimator.ofFloat(snackBar, View.TRANSLATION_Y, 0f)
-        val moveDownAnimatorSet = AnimatorSet()
-        moveDownAnimatorSet.playTogether(moveTypeMessageGroupDownAnimator, moveSnackBarDownAnimator)
-
-        val hideSnackBarAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 1.0f, 0.0f)
-
-        val generalAnimatorSet = AnimatorSet()
-        generalAnimatorSet.playSequentially(hideSnackBarAnimator, moveDownAnimatorSet)
-        generalAnimatorSet.start()
-
-        snackBarIsShowing = false
     }
 
     private fun viewIsVisible(view: View?): Boolean {
@@ -418,11 +342,6 @@ class ChatFragment : Fragment() {
 
     fun resetDialog() {
         hideAllDialogs()
-    }
-
-    fun snackBarSwitchToGameRequestSenderChat() {
-        chatSwitchBySnackBar = true
-        sharedViewModel.snackBarNavigateToChatFromChatFragment()
     }
 
     private fun enableGameModeKeyboard(){

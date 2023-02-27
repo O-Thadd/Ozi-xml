@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    >
+
+    <data>
+        <variable
+            name="viewModel"
+            type="com.othadd.ozi.ui.ChatViewModel" />
+    </data>
+
+
+<androidx.constraintlayout.widget.ConstraintLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -12,4 +23,56 @@
         android:layout_height="match_parent"
         app:defaultNavHost="true"
         app:navGraph="@navigation/nav_graph"/>
-</FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/snackbar_linearLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_snackbar"
+        android:gravity="center"
+        android:alpha="0.0"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="12dp"
+        android:layout_marginHorizontal="32dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="parent"
+        >
+
+        <TextView
+            android:id="@+id/snackBarMessage_textView"
+            android:layout_width="wrap_content"
+            android:textColor="@color/text_colour"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="12dp"
+            android:text="@{viewModel.snackBarStateX.message}"
+            android:textSize="16sp"
+            tools:text="Mary has challenged you!" />
+
+        <TextView
+            android:id="@+id/snackBarActionButton_textView"
+            android:layout_width="wrap_content"
+            android:textColor="@color/text_colour"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="12dp"
+            android:background="@drawable/bg_button_3"
+            android:onClick="@{() -> viewModel.goToGameRequestSenderChat()}"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="8dp"
+            android:text="@{viewModel.snackBarStateX.actionButtonText}"
+            android:textStyle="bold"
+            tools:text="Go to chat" />
+
+        <ImageView
+            android:id="@+id/closeSnackBarButton_imageView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="@{() -> viewModel.closeSnackBar()}"
+            android:src="@drawable/ic_baseline_close_24"
+            app:tint="@color/text_colour" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+
+</layout>

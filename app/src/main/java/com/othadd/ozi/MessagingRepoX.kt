@@ -1,6 +1,5 @@
 package com.othadd.ozi
 
-import android.os.Handler
 import android.util.Log
 import androidx.lifecycle.*
 import androidx.work.OneTimeWorkRequestBuilder
@@ -10,6 +9,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.othadd.ozi.database.DBChat
 import com.othadd.ozi.database.DialogState
 import com.othadd.ozi.database.getNoDialogDialogType
+import com.othadd.ozi.gaming.DUMMY_STRING
 import com.othadd.ozi.gaming.GameManager
 import com.othadd.ozi.models.ProfileFetchResponse
 import com.othadd.ozi.models.UsersFetchResponse
@@ -21,6 +21,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.util.*
 
+const val RESPOND_TO_GAME_REQUEST_PROMPT_TYPE = "respond to game request"
+
 class MessagingRepoX(private val oziApp: OziApplication) {
 
     private val chatDao = oziApp.database.chatDao()
@@ -31,10 +33,11 @@ class MessagingRepoX(private val oziApp: OziApplication) {
     val thisUserId get() = settingsRepo.getUserId()
 
     val chats = chatDao.getChatsFlow()
-    val chatMateId = MutableStateFlow(ARBITRARY_STRING)
+    val chatMateIdFlow = MutableStateFlow(ARBITRARY_STRING)
+    val chatMateId get() = chatMateIdFlow.value
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val chat = chatMateId.flatMapLatest {
+    val chat = chatMateIdFlow.flatMapLatest {
         chatDao.getChatByChatmateIdFlow(it)
     }
 
@@ -58,6 +61,14 @@ class MessagingRepoX(private val oziApp: OziApplication) {
     private val _refreshError = MutableStateFlow(false)
     val refreshError = _refreshError.asStateFlow()
 
+    private var currentPromptType = DUMMY_STRING
+
+    val newGameRequestFlow = gameManager.newGameRequest.map {
+        it ?: return@map Triple(null, null, chatMateId)
+        gameRequestSenderId = it
+        Triple(it, getUsernameX(it), chatMateId)
+    }
+    private lateinit var gameRequestSenderId: String
 
 
 
@@ -78,13 +89,13 @@ class MessagingRepoX(private val oziApp: OziApplication) {
             )
             chatDao.insert(chat)
         }
-        chatMateId.value = userId
+        chatMateIdFlow.value = userId
     }
 
     suspend fun markMessagesSent() = coroutineScope {
         launch(Dispatchers.IO) {
             try {
-                val chat = chatDao.getChatByChatmateId(chatMateId.value)
+                val chat = chatDao.getChatByChatmateId(chatMateIdFlow.value)
                 chat?.let {
                     it.markAllMessagesSent()
                     chatDao.update(it)
@@ -98,7 +109,7 @@ class MessagingRepoX(private val oziApp: OziApplication) {
     suspend fun markMessagesRead() = coroutineScope {
         launch(Dispatchers.IO) {
             try {
-                val chat = chatDao.getChatByChatmateId(chatMateId.value)
+                val chat = chatDao.getChatByChatmateId(chatMateIdFlow.value)
                 chat?.let {
                     it.markMessagesRead()
                     chatDao.update(it)
@@ -178,7 +189,7 @@ class MessagingRepoX(private val oziApp: OziApplication) {
     suspend fun sendChatMessage(
         messageBody: String,
         senderId: String = thisUserId,
-        receiverId: String = chatMateId.value,
+        receiverId: String = chatMateIdFlow.value,
     ) {
         val newMessage =
             Message(senderId, receiverId, messageBody, Calendar.getInstance().timeInMillis)
@@ -256,7 +267,11 @@ class MessagingRepoX(private val oziApp: OziApplication) {
         return chatDao.getChatByChatmateId(userId)!!.chatMateUsername
     }
 
-    suspend fun refreshUser(userId: String = chatMateId.value) {
+    suspend fun getUsernameX(userId: String): String {
+        return withContext(Dispatchers.IO) { chatDao.getChatByChatmateId(userId)!!.chatMateUsername }
+    }
+
+    suspend fun refreshUser(userId: String = chatMateIdFlow.value) {
         withContext(Dispatchers.IO) {
             val user = NetworkApi.retrofitService.getUser(userId)
             val dbChat = getChat(userId)!!
@@ -300,13 +315,6 @@ class MessagingRepoX(private val oziApp: OziApplication) {
     fun getGameModeratorId(): String{
         return settingsRepo.getGameModeratorId()
     }
-
-
-
-
-
-
-
 
     private fun scheduleMessageForSendToServer(newMessage: Message) {
         val newMessageString = messageToString(newMessage)
@@ -360,7 +368,6 @@ class MessagingRepoX(private val oziApp: OziApplication) {
 
         delay(100L) //if the scroll follows without delay, the screen maybe scrolled just before the latest message has appeared.
         settingsRepo.updateScroll(true)
-
     }
 
     private suspend fun saveOutGoingMessage(newMessage: Message) {
@@ -391,7 +398,6 @@ class MessagingRepoX(private val oziApp: OziApplication) {
             }
 
             saveMessage(newMessage, chatMateId)
-            return@launch
         }
     }
 
@@ -443,28 +449,28 @@ class MessagingRepoX(private val oziApp: OziApplication) {
         chatDao.update(chat)
     }
 
-    suspend fun registerUser(userId: String, username: String, gender: String, token: String) {
-        NetworkApi.retrofitService.registerNewUserWithToken(userId, username, gender, token)
+    suspend fun startGameRequestSenderChat(){
+        startChat(gameRequestSenderId)
     }
 
     suspend fun sendGameRequest() {
-        gameManager.sendGameRequest()
+        gameManager.sendGameRequest(chatMateId)
     }
 
-    suspend fun givePositiveResponse() {
-        gameManager.givePositiveResponse()
+    suspend fun promptDialogPositiveButtonPressed(){
+        when(currentPromptType){
+            RESPOND_TO_GAME_REQUEST_PROMPT_TYPE -> gameManager.acceptGameRequest(chatMateId)
+        }
     }
 
-    suspend fun giveNegativeResponse() {
-        gameManager.giveNegativeResponse()
+    suspend fun promptDialogNegativeButtonPressed(){
+        when(currentPromptType){
+            RESPOND_TO_GAME_REQUEST_PROMPT_TYPE -> gameManager.declineGameRequest(chatMateId)
+        }
     }
 
     suspend fun notifyDialogOkayPressed() {
-        gameManager.notifyDialogOkayPressed()
-    }
-
-    fun getGameRequestSenderId(): String {
-        return gameManager.getGameRequestSenderId()
+        updateDialogState(chatMateId, getNoDialogDialogType())
     }
 
     private fun getPackageFromMessage(message: Message): MessagePackage {

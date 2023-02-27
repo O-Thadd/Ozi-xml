@@ -11,6 +11,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.activityViewModels
+import androidx.navigation.fragment.findNavController
 import com.othadd.ozi.MessagingRepoX
 import com.othadd.ozi.OziApplication
 import com.othadd.ozi.database.ChatDao
@@ -34,13 +35,9 @@ class ProfileFragment : Fragment() {
     private lateinit var loadingIcon: ImageView
     private lateinit var couldNotFetchTextView: TextView
     private lateinit var tryAgainTextViewButton: TextView
-    private lateinit var snackBar: LinearLayout
-    private lateinit var snackBarActionButton: TextView
-    private lateinit var snackBarCloseButton: ImageView
     private lateinit var profileDetailsGroup: ConstraintLayout
 
     private lateinit var animator: ObjectAnimator
-    private var snackBarIsShowing = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -60,11 +57,19 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        loadingComponents = binding.loadingElementsLinearLayout
-        loadingIcon = binding.loadingIconImageView
-        couldNotFetchTextView = binding.couldNotFetchProfileTextView
-        tryAgainTextViewButton = binding.tryAgainButtonTextView
-        profileDetailsGroup = binding.profileDetailsGroupConstraintLayout
+//        loadingComponents = binding.loadingElementsLinearLayout
+//        loadingIcon = binding.loadingIconImageView
+//        couldNotFetchTextView = binding.couldNotFetchProfileTextView
+//        tryAgainTextViewButton = binding.tryAgainButtonTextView
+//        profileDetailsGroup = binding.profileDetailsGroupConstraintLayout
+
+        binding.apply {
+            loadingComponents = loadingElementsLinearLayout
+            loadingIcon = loadingIconImageView
+            couldNotFetchTextView = couldNotFetchProfileTextView
+            tryAgainTextViewButton = tryAgainButtonTextView
+            profileDetailsGroup = profileDetailsGroupConstraintLayout
+        }
 
         animator = ObjectAnimator.ofFloat(loadingIcon, View.ROTATION, -360f, 0f)
         animator.repeatCount = ObjectAnimator.INFINITE
@@ -73,6 +78,12 @@ class ProfileFragment : Fragment() {
         sharedViewModel.profileFragmentUIState.observe(viewLifecycleOwner){
             handleProfile(it.profile)
             handleProfileFetchStatus(it.fetchStatus)
+        }
+
+        sharedViewModel.navigateToChatFragment.observe(viewLifecycleOwner){
+            if (it) {
+                findNavController().navigate(ProfileFragmentDirections.actionProfileFragmentToChatFragment())
+            }
         }
     }
 

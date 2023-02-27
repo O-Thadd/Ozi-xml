@@ -1,48 +1,56 @@
 package com.othadd.ozi.ui
 
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
 import android.os.Bundle
-import android.util.Log
+import android.view.View
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.fragment.app.activityViewModels
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.othadd.ozi.MessagingRepoX
 import com.othadd.ozi.OziApplication
 import com.othadd.ozi.R
-import com.othadd.ozi.database.ChatDao
-import com.othadd.ozi.network.NetworkApi
+import com.othadd.ozi.databinding.ActivityMainBinding
 import com.othadd.ozi.network.USER_OFFLINE
 import com.othadd.ozi.network.USER_ONLINE
-import com.othadd.ozi.utils.SettingsRepo
 import com.othadd.ozi.utils.WORKER_STATUS_UPDATE_KEY
 import com.othadd.ozi.workers.UpdateStatusWorker
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavController
-
-
     private val sharedViewModel: ChatViewModel by viewModels()
+    private lateinit var binding: ActivityMainBinding
+
+    private lateinit var snackBarActionButton: TextView
+    private lateinit var snackBarCloseButton: ImageView
+    private lateinit var snackBar: LinearLayout
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        binding.apply {
+            lifecycleOwner = this@MainActivity
+            viewModel = sharedViewModel
+            snackBarActionButton = snackBarActionButtonTextView
+            snackBarCloseButton = closeSnackBarButtonImageView
+            snackBar = snackbarLinearLayout
+        }
 
         sharedViewModel.darkMode.observe(this){
                 AppCompatDelegate.setDefaultNightMode(if (it) MODE_NIGHT_YES else MODE_NIGHT_NO)
@@ -55,6 +63,53 @@ class MainActivity : AppCompatActivity() {
         if (senderId != null){
             sharedViewModel.startChatFromActivity(senderId)
         }
+
+        setUpSnackBar()
+    }
+
+    private fun setUpSnackBar() {
+        sharedViewModel.snackBarStateX.observe(this) {
+            when {
+                it.showActionButton -> {
+                    snackBarActionButton.visibility = View.VISIBLE
+                    snackBarCloseButton.visibility = View.VISIBLE
+                    showSnackBar()
+                }
+
+                !it.showActionButton && it.message != "" -> {
+                    snackBarActionButton.visibility = View.GONE
+                    snackBarCloseButton.visibility = View.GONE
+                    showSnackBar()
+                }
+
+                it.message == "" -> {
+                    hideSnackBar()
+                }
+            }
+//
+//            binding.snackBarMessageTextView.text = it.message
+//            binding.snackBarActionButtonTextView.text = it.actionButtonText
+        }
+    }
+
+    private fun hideSnackBar() {
+        val moveSnackBarUpAnimator =
+            ObjectAnimator.ofFloat(snackBar, View.TRANSLATION_Y, -((2.5 * snackBar.height).toFloat()))
+        val decreaseSnackBarAlphaAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 1.0f, 0.0f)
+
+        val generalAnimatorSet = AnimatorSet()
+        generalAnimatorSet.playTogether(moveSnackBarUpAnimator, decreaseSnackBarAlphaAnimator)
+        generalAnimatorSet.start()
+    }
+
+    private fun showSnackBar() {
+        val moveSnackBarDownAnimator =
+            ObjectAnimator.ofFloat(snackBar, View.TRANSLATION_Y, ((2.5 * snackBar.height).toFloat()))
+        val increaseSnackBarAlphaAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 0.0f, 1.0f)
+
+        val generalAnimatorSet = AnimatorSet()
+        generalAnimatorSet.playTogether(moveSnackBarDownAnimator, increaseSnackBarAlphaAnimator)
+        generalAnimatorSet.start()
     }
 
     override fun onResume() {

@@ -13,9 +13,7 @@ import com.othadd.ozi.models.ChatsFragmentUIState
 import com.othadd.ozi.models.FindUsersFragmentUIState
 import com.othadd.ozi.models.ProfileFragmentUIState
 import com.othadd.ozi.models.RegisterFragmentUIState
-import com.othadd.ozi.network.CURRENTLY_PLAYING_GAME_STATE
-import com.othadd.ozi.network.NetworkApi
-import com.othadd.ozi.utils.*
+import com.othadd.ozi.utils.SettingsRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,15 +37,15 @@ open class ChatViewModel @Inject constructor(
     private val oziApplication: OziApplication
 ) : ViewModel() {
 
-    private val gameManager = GameManager.getInstance(oziApplication, messagingRepoX)
     private val thisUserId: String = settingsRepo.getUserId()
+    private val gameManager = GameManager.getInstance(oziApplication, messagingRepoX)
 
     val chats = Transformations.map(messagingRepoX.chats.asLiveData()) { listOfDBChats ->
         listOfDBChats.sortedByDescending { it.lastMessage()?.dateTime }.toUIChat()
     }
     val chat: LiveData<UIChat2> =
         Transformations.map(messagingRepoX.chat.asLiveData()){ it.toUIChat2(thisUserId) }
-    private val currentChatChatMateId get() = messagingRepoX.chatMateId.value
+    private val currentChatChatMateId get() = messagingRepoX.chatMateIdFlow.value
 
     val darkMode: LiveData<Boolean> = messagingRepoX.darkModeSet.asLiveData()
 
@@ -91,6 +89,13 @@ open class ChatViewModel @Inject constructor(
 
     val refreshError = messagingRepoX.refreshError.asLiveData()
 
+    private var _snackBarStateX = MutableLiveData<SnackBarState>()
+    val snackBarStateX: LiveData<SnackBarState> get() = _snackBarStateX
+
+    private val chatFragmentShowing = MutableStateFlow(false)
+
+
+
 
 
 
@@ -109,23 +114,10 @@ open class ChatViewModel @Inject constructor(
 
     var chatStartedByActivity = false
 
-    val snackBarState: LiveData<SnackBarState> =
-        Transformations.map(settingsRepo.snackBarStateFlow().asLiveData()) {
-
-            // this checks if the snackBar is a noSnackBar snackBar. done by simply checking if the message is an empty string.
-            // a better implementation would be to include a field that indicates snackBar type in the snackBar class, and then check with that field.
-            if (it.message != "") {
-                snackBarTimer.cancel()
-                snackBarTimer.start()
-            }
-
-            it
-        }
-
     val shouldScrollChat: LiveData<Boolean> = settingsRepo.scrollFlow().asLiveData()
 
 
-    private val snackBarTimer = object : CountDownTimer(7000, 1000) {
+    private val snackBarTimer = object : CountDownTimer(7000, 6000) {
         override fun onTick(millisUntilFinished: Long) {}
         override fun onFinish() {
             closeSnackBar()
@@ -160,11 +152,8 @@ open class ChatViewModel @Inject constructor(
     fun startChat(userId: String) {
         viewModelScope.launch {
             messagingRepoX.startChat(userId)
-            //there is a very brief period between when the chat is opened and when the data is loaded.
-            //so the user briefly sees a blank chat
-            // this delay tries to ensure the data is all loaded before the chat is opened.
-            delay(50L)
-            _navigateToChatFragment.value = true
+//            _navigateToChatFragment.value = true
+            navigateToChatFragment()
         }
     }
 
@@ -245,13 +234,13 @@ open class ChatViewModel @Inject constructor(
 
     fun respondPositive() {
         viewModelScope.launch {
-            messagingRepoX.givePositiveResponse()
+            messagingRepoX.promptDialogPositiveButtonPressed()
         }
     }
 
     fun respondNegative() {
         viewModelScope.launch {
-            messagingRepoX.giveNegativeResponse()
+            messagingRepoX.promptDialogNegativeButtonPressed()
         }
     }
 
@@ -284,10 +273,34 @@ open class ChatViewModel @Inject constructor(
     }
 
     fun goToGameRequestSenderChat() {
-//        startChat(messagingRepoX.getGameRequestSenderId())
         viewModelScope.launch {
-            gameManager.startGameRequestSenderChat()
+            snackBarTimer.cancel()
+            closeSnackBar()
+            messagingRepoX.startGameRequestSenderChat()
+            navigateToChatFragment()
         }
+    }
+
+    private suspend fun navigateToChatFragment() {
+        //there is a very brief period between when the chat is opened and when the data is loaded.
+        //so the user briefly sees a blank chat
+        // this delay tries to ensure the data is all loaded before the chat is opened.
+        delay(50L)
+        _navigateToChatFragment.value = true
+    }
+
+    fun refreshUserStatus() {
+        viewModelScope.launch {
+            try {
+                messagingRepoX.refreshUser()
+            } catch (e: Exception) {
+                Log.e("viewModel", "error refreshing user status. $e")
+            }
+        }
+    }
+
+    fun updateChatFragmentShowing(newStatus: Boolean){
+        chatFragmentShowing.value = newStatus
     }
 
 
@@ -302,49 +315,45 @@ open class ChatViewModel @Inject constructor(
 
 
     fun closeSnackBar() {
-        settingsRepo.updateSnackBarState(getNoSnackBarSnackBar())
+        _snackBarStateX.value = getNoSnackBarSnackBar()
     }
-
-    fun snackBarNavigateToChatFromChatFragment() {
-        _navigateToChatsFragment.value = true
-        startChat(getGameRequestSenderId())
-    }
-
-    fun getGameRequestSenderId(): String {
-        return messagingRepoX.getGameRequestSenderId()
-    }
-
-    fun refreshUserStatus() {
-        viewModelScope.launch {
-            try {
-                messagingRepoX.refreshUser()
-            } catch (e: Exception) {
-                Log.e("viewModel", "error refreshing user status. $e")
-            }
-        }
-
-
-        // upper part of method fixed, following part should be fixed next.
-//        viewModelScope.launch {
-//            try {
-//                val user = NetworkApi.retrofitService.getUser(currentChatChatMateId)
-//                settingsRepo.updateKeyboardMode(user.gameState == CURRENTLY_PLAYING_GAME_STATE)
-//            } catch (e: Exception) {
-//                Log.e(
-//                    "viewModel",
-//                    "error getting keyboard mode for chatmate in refreshUserStatus() $e"
-//                )
-//            }
-//        }
-    }
-
-
-
 
     init {
         _showConfirmGameRequestDialog.value = false
         _navigateToChatFragment.value = false
         _navigateToChatsFragment.value = false
+        _snackBarStateX.value = getNoSnackBarSnackBar()
+
+        viewModelScope.launch {
+            combine(messagingRepoX.newGameRequestFlow, chatFragmentShowing){newGameRequestData, chatFragmentShowing ->
+                if(newGameRequestData.first == null){
+                    return@combine getNoSnackBarSnackBar()
+                }
+
+                if(!chatFragmentShowing){
+                    snackBarTimer.cancel()
+                    snackBarTimer.start()
+                    return@combine getPromptSnackBar(
+                        "${newGameRequestData.second} has challenged you!",
+                        "Open chat"
+                    )
+                }
+
+                return@combine if (newGameRequestData.third == currentChatChatMateId){
+                    getNoSnackBarSnackBar()
+                }
+                else{
+                    snackBarTimer.cancel()
+                    snackBarTimer.start()
+                    getPromptSnackBar(
+                        "${newGameRequestData.second} has challenged you!",
+                        "Open chat"
+                    )
+                }
+            }.collect {
+                _snackBarStateX.value = it
+            }
+        }
     }
 
 //    companion object {

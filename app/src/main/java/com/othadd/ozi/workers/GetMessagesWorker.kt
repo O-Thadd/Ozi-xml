@@ -6,17 +6,18 @@ import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.othadd.ozi.MessagingRepoX
 import com.othadd.ozi.OziApplication
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 
 class
 GetMessagesWorker(context: Context, params: WorkerParameters) :
     Worker(context, params) {
 
     override fun doWork(): Result {
+        val scope = CoroutineScope(Dispatchers.Main + Job())
+        var result: Result? = null
         val appContext = applicationContext as OziApplication
-        return runBlocking(Dispatchers.Main) {
-            try {
+        scope.launch {
+            result = try {
                 MessagingRepoX(appContext).refreshMessages()
                 Result.success()
             } catch (throwable: Throwable) {
@@ -24,5 +25,6 @@ GetMessagesWorker(context: Context, params: WorkerParameters) :
                 Result.failure()
             }
         }
+        return result!!
     }
 }

@@ -27,12 +27,6 @@ class DeveloperFragment : Fragment() {
 
     private lateinit var binding: FragmentDeveloperBinding
 
-    private lateinit var snackBar: LinearLayout
-    private lateinit var snackBarActionButton: TextView
-    private lateinit var snackBarCloseButton: ImageView
-
-    private var snackBarIsShowing = false
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -51,57 +45,11 @@ class DeveloperFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        snackBar = binding.snackBarLinearLayout
-        snackBarActionButton = binding.snackBarActionButtonTextView
-        snackBarCloseButton = binding.closeSnackBarButtonImageView
-
-        sharedViewModel.snackBarState.observe(viewLifecycleOwner) {
-            when {
-                it.showActionButton -> {
-                    snackBar.visibility = View.VISIBLE
-                    snackBarActionButton.visibility = View.VISIBLE
-                    snackBarCloseButton.visibility = View.VISIBLE
-                    showSnackBar()
-                }
-
-                !it.showActionButton && it.message != "" -> {
-                    snackBar.visibility = View.VISIBLE
-                    snackBarActionButton.visibility = View.GONE
-                    snackBarCloseButton.visibility = View.GONE
-                    showSnackBar()
-                }
-
-                it.message == "" -> {
-                    hideSnackBar()
-                }
-            }
-        }
-
         sharedViewModel.navigateToChatFragment.observe(viewLifecycleOwner) {
             if (it) {
                 findNavController().navigate(DeveloperFragmentDirections.actionDeveloperFragmentToChatFragment())
             }
         }
-    }
-
-    private fun showSnackBar() {
-        if (snackBarIsShowing) {
-            hideSnackBar()
-        }
-
-        val showSnackBarAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 0.0f, 1.0f)
-        showSnackBarAnimator.start()
-        snackBarIsShowing = true
-    }
-
-    private fun hideSnackBar() {
-        if (!snackBarIsShowing) {
-            return
-        }
-
-        val hideSnackBarAnimator = ObjectAnimator.ofFloat(snackBar, View.ALPHA, 1.0f, 0.0f)
-        hideSnackBarAnimator.start()
-        snackBarIsShowing = false
     }
 
     fun goBack() {

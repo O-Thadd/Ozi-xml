@@ -33,7 +33,7 @@ data class DBChat(
     fun lastMessage() = this.messages.maxByOrNull { it.dateTime }
 
     fun markAllMessagesSent() {
-        for (message: Message in messages) {
+        for (message in messages) {
             message.sent = true
         }
     }
