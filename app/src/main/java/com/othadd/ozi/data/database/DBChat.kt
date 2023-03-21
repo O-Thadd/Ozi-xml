@@ -1,4 +1,4 @@
-package com.othadd.ozi.database
+package com.othadd.ozi.data.database
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity

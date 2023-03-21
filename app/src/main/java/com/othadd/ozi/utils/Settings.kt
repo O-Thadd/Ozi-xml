@@ -71,48 +71,6 @@ class SettingsRepo(private val context: Context) {
         }
     }
 
-    fun updateSnackBarState(snackBarState: SnackBarState) {
-        runBlocking {
-            val snackBarString = snackBarToString(snackBarState)
-            context.dataStore.edit {
-                it[snackBarKey] = snackBarString
-            }
-        }
-    }
-
-    fun snackBarStateFlow(): Flow<SnackBarState> {
-        return context.dataStore.data.map {
-            stringToSnackBar(it[snackBarKey]) ?: getNoSnackBarSnackBar()
-        }
-    }
-
-    suspend fun updateScroll(scroll: Boolean) {
-        context.dataStore.edit {
-            it[scrollKey] = scroll
-        }
-    }
-
-    fun scrollFlow(): Flow<Boolean> {
-        return context.dataStore.data.map {
-            it[scrollKey] ?: false
-        }
-
-    }
-
-    fun updateMarkSent(update: Boolean) {
-        runBlocking {
-            context.dataStore.edit {
-                it[markSentKey] = update
-            }
-        }
-    }
-
-    fun markSentFlow(): Flow<Boolean> {
-        return context.dataStore.data.map {
-            it[markSentKey] ?: false
-        }
-    }
-
     fun updateDarkMode(update: Boolean) {
         runBlocking {
             context.dataStore.edit {
@@ -124,20 +82,6 @@ class SettingsRepo(private val context: Context) {
     fun darkModeFlow(): Flow<Boolean> {
         return context.dataStore.data.map {
             it[darkModeKey] ?: false
-        }
-    }
-
-    fun updateKeyboardMode(update: Boolean) {
-        runBlocking {
-            context.dataStore.edit {
-                it[gameModeKeyboardKey] = update
-            }
-        }
-    }
-
-    fun keyBoardModeFlow(): Flow<Boolean> {
-        return context.dataStore.data.map {
-            it[gameModeKeyboardKey] ?: false
         }
     }
 

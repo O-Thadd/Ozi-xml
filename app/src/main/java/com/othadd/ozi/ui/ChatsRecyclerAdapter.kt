@@ -8,8 +8,8 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.othadd.ozi.R
 import com.othadd.ozi.databinding.ChatsListItemBinding
-import com.othadd.ozi.network.FEMALE
-import com.othadd.ozi.network.MALE
+import com.othadd.ozi.data.network.FEMALE
+import com.othadd.ozi.data.network.MALE
 
 class ChatsRecyclerAdapter(private val onItemClick: (String) -> Unit) :
     ListAdapter<UIChat, ChatsRecyclerAdapter.ChatViewHolder>(DiffCallback) {

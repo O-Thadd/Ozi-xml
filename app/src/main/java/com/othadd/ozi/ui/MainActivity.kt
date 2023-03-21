@@ -20,8 +20,8 @@ import androidx.work.workDataOf
 import com.othadd.ozi.OziApplication
 import com.othadd.ozi.R
 import com.othadd.ozi.databinding.ActivityMainBinding
-import com.othadd.ozi.network.USER_OFFLINE
-import com.othadd.ozi.network.USER_ONLINE
+import com.othadd.ozi.data.network.USER_OFFLINE
+import com.othadd.ozi.data.network.USER_ONLINE
 import com.othadd.ozi.utils.WORKER_STATUS_UPDATE_KEY
 import com.othadd.ozi.workers.UpdateStatusWorker
 import dagger.hilt.android.AndroidEntryPoint
@@ -86,9 +86,6 @@ class MainActivity : AppCompatActivity() {
                     hideSnackBar()
                 }
             }
-//
-//            binding.snackBarMessageTextView.text = it.message
-//            binding.snackBarActionButtonTextView.text = it.actionButtonText
         }
     }
 

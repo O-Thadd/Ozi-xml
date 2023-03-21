@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.othadd.ozi.network.NetworkApi
+import com.othadd.ozi.data.network.NetworkApi
 import com.othadd.ozi.utils.SettingsRepo
 import com.othadd.ozi.utils.WORKER_STATUS_UPDATE_KEY
 

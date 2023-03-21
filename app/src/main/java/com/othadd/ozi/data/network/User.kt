@@ -1,4 +1,4 @@
-package com.othadd.ozi.network
+package com.othadd.ozi.data.network
 
 const val MALE = "Male"
 const val FEMALE = "Female"

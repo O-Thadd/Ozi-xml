@@ -5,9 +5,9 @@ import androidx.databinding.BindingAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.othadd.ozi.R
 import com.othadd.ozi.UIMessage
-import com.othadd.ozi.network.FEMALE
-import com.othadd.ozi.network.MALE
-import com.othadd.ozi.network.User
+import com.othadd.ozi.data.network.FEMALE
+import com.othadd.ozi.data.network.MALE
+import com.othadd.ozi.data.network.User
 import com.othadd.ozi.ui.ChatsRecyclerAdapter
 import com.othadd.ozi.ui.MessagesRecyclerAdapter
 import com.othadd.ozi.ui.UIChat

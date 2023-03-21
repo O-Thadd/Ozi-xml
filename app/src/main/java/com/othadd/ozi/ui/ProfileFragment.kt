@@ -12,12 +12,11 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import com.othadd.ozi.MessagingRepoX
 import com.othadd.ozi.OziApplication
-import com.othadd.ozi.database.ChatDao
+import com.othadd.ozi.data.database.ChatDao
 import com.othadd.ozi.databinding.FragmentProfileBinding
-import com.othadd.ozi.network.MALE
-import com.othadd.ozi.network.User
+import com.othadd.ozi.data.network.MALE
+import com.othadd.ozi.data.network.User
 import com.othadd.ozi.utils.SettingsRepo
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject

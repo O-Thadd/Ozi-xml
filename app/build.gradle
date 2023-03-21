@@ -100,6 +100,10 @@ dependencies {
     def work_version = "2.7.1"
     // Kotlin + coroutines
     implementation "androidx.work:work-runtime-ktx:$work_version"
+    // hilt for WorkManager(HFWm)
+    implementation 'androidx.hilt:hilt-work:1.0.0'
+    // HFWm - When using Kotlin.
+    kapt 'androidx.hilt:hilt-compiler:1.0.0'
 
     // Splash screen
     implementation 'androidx.core:core-splashscreen:1.0.0'

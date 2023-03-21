@@ -1,6 +1,6 @@
 package com.othadd.ozi.models
 
-import com.othadd.ozi.network.User
+import com.othadd.ozi.data.network.User
 import com.othadd.ozi.ui.DEFAULT
 import java.util.Calendar
 

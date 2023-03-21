@@ -1,23 +1,14 @@
 package com.othadd.ozi.ui
 
-import android.animation.ObjectAnimator
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import com.othadd.ozi.MessagingRepoX
-import com.othadd.ozi.OziApplication
-import com.othadd.ozi.database.ChatDao
 import com.othadd.ozi.databinding.FragmentDeveloperBinding
-import com.othadd.ozi.utils.SettingsRepo
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class DeveloperFragment : Fragment() {

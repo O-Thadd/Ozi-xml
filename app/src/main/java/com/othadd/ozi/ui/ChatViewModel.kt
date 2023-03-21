@@ -3,17 +3,13 @@ package com.othadd.ozi.ui
 import android.os.CountDownTimer
 import android.util.Log
 import androidx.lifecycle.*
-import com.othadd.ozi.MessagingRepoX
-import com.othadd.ozi.OziApplication
-import com.othadd.ozi.database.ChatDao
-import com.othadd.ozi.database.toUIChat
-import com.othadd.ozi.database.toUIChat2
-import com.othadd.ozi.gaming.GameManager
+import com.othadd.ozi.Service
+import com.othadd.ozi.data.database.toUIChat
+import com.othadd.ozi.data.database.toUIChat2
 import com.othadd.ozi.models.ChatsFragmentUIState
 import com.othadd.ozi.models.FindUsersFragmentUIState
 import com.othadd.ozi.models.ProfileFragmentUIState
 import com.othadd.ozi.models.RegisterFragmentUIState
-import com.othadd.ozi.utils.SettingsRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,26 +27,22 @@ const val ERROR = 4
 
 @HiltViewModel
 open class ChatViewModel @Inject constructor(
-    private val chatDao: ChatDao,
-    private val settingsRepo: SettingsRepo,
-    private val messagingRepoX: MessagingRepoX,
-    private val oziApplication: OziApplication
+    private val service: Service
 ) : ViewModel() {
 
-    private val thisUserId: String = settingsRepo.getUserId()
-    private val gameManager = GameManager.getInstance(oziApplication, messagingRepoX)
+    private val thisUserId: String get() = service.thisUserId
 
-    val chats = Transformations.map(messagingRepoX.chats.asLiveData()) { listOfDBChats ->
+    val chats = Transformations.map(service.chats.asLiveData()) { listOfDBChats ->
         listOfDBChats.sortedByDescending { it.lastMessage()?.dateTime }.toUIChat()
     }
     val chat: LiveData<UIChat2> =
-        Transformations.map(messagingRepoX.chat.asLiveData()){ it.toUIChat2(thisUserId) }
-    private val currentChatChatMateId get() = messagingRepoX.chatMateIdFlow.value
+        Transformations.map(service.chat.asLiveData()) { it.toUIChat2(thisUserId) }
+    private val currentChatChatMateId get() = service.chatMateIdFlow.value
 
-    val darkMode: LiveData<Boolean> = messagingRepoX.darkModeSet.asLiveData()
+    val darkMode: LiveData<Boolean> = service.darkModeSet.asLiveData()
 
     val findUsersFragmentUIState =
-        combine(messagingRepoX.users, messagingRepoX.searchedUsers) { users, searchedUsers ->
+        combine(service.users, service.searchedUsers) { users, searchedUsers ->
             if (searchedUsers.timeStamp > users.timeStamp) {
                 FindUsersFragmentUIState(searchedUsers.status, DEFAULT, searchedUsers.users)
             } else {
@@ -58,12 +50,12 @@ open class ChatViewModel @Inject constructor(
             }
         }.asLiveData()
 
-    val profileFragmentUIState = messagingRepoX.profile.map {
+    val profileFragmentUIState = service.profile.map {
         ProfileFragmentUIState(it.status, it.user)
     }.asLiveData()
 
     val chatsFragmentUIState =
-        combine(messagingRepoX.chats, messagingRepoX.darkModeSet) { chats, darkModeSet ->
+        combine(service.chats, service.darkModeSet) { chats, darkModeSet ->
             val uiChats = chats.sortedByDescending { it.lastMessage()?.dateTime }.toUIChat()
             ChatsFragmentUIState(darkModeSet, uiChats)
         }.asLiveData()
@@ -71,9 +63,9 @@ open class ChatViewModel @Inject constructor(
     private val genderSelectionPopupIsShowing = MutableStateFlow(false)
     private val genderHasBeenSelected = MutableStateFlow(false)
     val registerFragmentUIState = combine(
-        messagingRepoX.userIsRegistered,
-        messagingRepoX.registeringStatus,
-        messagingRepoX.usernameCheckStatus,
+        service.userIsRegistered,
+        service.registeringStatus,
+        service.usernameCheckStatus,
         genderSelectionPopupIsShowing,
         genderHasBeenSelected
     ) { userIsRegistered, registeringStatus, usernameCheckStatus, genderPopupShowing, genderSelected ->
@@ -87,19 +79,13 @@ open class ChatViewModel @Inject constructor(
         )
     }.asLiveData()
 
-    val refreshError = messagingRepoX.refreshError.asLiveData()
+    val refreshError = service.refreshError.asLiveData()
 
     private var _snackBarStateX = MutableLiveData<SnackBarState>()
     val snackBarStateX: LiveData<SnackBarState> get() = _snackBarStateX
 
     private val chatFragmentShowing = MutableStateFlow(false)
-
-
-
-
-
-
-
+    private var chatFragmentShowingX = false
 
     private var _showConfirmGameRequestDialog = MutableLiveData<Boolean>()
     val showConfirmGameRequestDialog: LiveData<Boolean> get() = _showConfirmGameRequestDialog
@@ -107,15 +93,9 @@ open class ChatViewModel @Inject constructor(
     private var _navigateToChatFragment = MutableLiveData<Boolean>()
     val navigateToChatFragment: LiveData<Boolean> get() = _navigateToChatFragment
 
-    private var _navigateToChatsFragment = MutableLiveData<Boolean>()
-    val navigateToChatsFragment: LiveData<Boolean> get() = _navigateToChatsFragment
-
-    val markAllMessagesSent = settingsRepo.markSentFlow().asLiveData()
-
     var chatStartedByActivity = false
 
-    val shouldScrollChat: LiveData<Boolean> = settingsRepo.scrollFlow().asLiveData()
-
+    val shouldScrollChat: LiveData<Boolean> = service.scrollMessages.asLiveData()
 
     private val snackBarTimer = object : CountDownTimer(7000, 6000) {
         override fun onTick(millisUntilFinished: Long) {}
@@ -124,96 +104,81 @@ open class ChatViewModel @Inject constructor(
         }
     }
 
-    val shouldEnableGameModeKeyboard: LiveData<Boolean> =
-        settingsRepo.keyBoardModeFlow().asLiveData()
-
-
-
+    val shouldEnableGameModeKeyboard: LiveData<Boolean> = service.useGameKeyboard.asLiveData()
 
 
     fun sendMessage(messageBody: String) {
         viewModelScope.launch {
-            messagingRepoX.sendChatMessage(messageBody)
+            service.sendChatMessage(messageBody)
         }
     }
 
     fun refreshMessages() {
         viewModelScope.launch {
-            messagingRepoX.refreshMessages()
+            service.refreshMessages()
         }
     }
 
     fun registerUser(username: String, gender: String) {
         viewModelScope.launch {
-            messagingRepoX.registerUser(username, gender, viewModelScope)
+            service.registerUser(username, gender, viewModelScope)
         }
     }
 
     fun startChat(userId: String) {
         viewModelScope.launch {
-            messagingRepoX.startChat(userId)
-//            _navigateToChatFragment.value = true
+            service.startChat(userId)
             navigateToChatFragment()
         }
     }
 
     fun getLatestUsers() {
         viewModelScope.launch {
-            messagingRepoX.getUsers()
+            service.getUsers()
         }
     }
 
     fun getMatchingUsers(usernameSubString: String) {
         viewModelScope.launch {
             if (usernameSubString.isBlank()) {
-                messagingRepoX.getUsers()
+                service.getUsers()
             } else {
-                messagingRepoX.searchUsers(usernameSubString)
+                service.searchUsers(usernameSubString)
             }
         }
     }
 
     fun getProfile() {
         viewModelScope.launch {
-            messagingRepoX.getProfile()
+            service.getProfile()
         }
     }
 
     fun checkUsername(username: String) {
         viewModelScope.launch {
-            messagingRepoX.checkUsername(username)
+            service.checkUsername(username)
         }
     }
 
     fun resetUsernameCheck() {
-        messagingRepoX.resetUsernameCheck()
+        service.resetUsernameCheck()
     }
 
-    fun showGenderSelectionPopup(){
-        genderSelectionPopupIsShowing.value = true
-    }
-
-    fun hideGenderSelectionPopup(){
+    fun hideGenderSelectionPopup() {
         genderSelectionPopupIsShowing.value = false
     }
 
-    fun toggleGenderSelectionPopup(){
+    fun toggleGenderSelectionPopup() {
         genderSelectionPopupIsShowing.value = !genderSelectionPopupIsShowing.value
     }
 
-    fun updateGenderSelected(newValue: Boolean){
+    fun updateGenderSelected(newValue: Boolean) {
         genderHasBeenSelected.value = newValue
-    }
-
-    fun markMessagesSent() {
-        viewModelScope.launch {
-            messagingRepoX.markMessagesSent()
-        }
     }
 
     fun markMessagesRead() {
         viewModelScope.launch {
-            messagingRepoX.markMessagesRead()
+            service.markMessagesRead()
         }
     }
 
@@ -223,7 +188,7 @@ open class ChatViewModel @Inject constructor(
 
     fun sendGameRequest() {
         viewModelScope.launch {
-            messagingRepoX.sendGameRequest()
+            service.sendGameRequest()
             _showConfirmGameRequestDialog.value = false
         }
     }
@@ -234,19 +199,19 @@ open class ChatViewModel @Inject constructor(
 
     fun respondPositive() {
         viewModelScope.launch {
-            messagingRepoX.promptDialogPositiveButtonPressed()
+            service.promptDialogPositiveButtonPressed()
         }
     }
 
     fun respondNegative() {
         viewModelScope.launch {
-            messagingRepoX.promptDialogNegativeButtonPressed()
+            service.promptDialogNegativeButtonPressed()
         }
     }
 
     fun notifyDialogOkayPressed() {
         viewModelScope.launch {
-            messagingRepoX.notifyDialogOkayPressed()
+            service.notifyDialogOkayPressed()
         }
     }
 
@@ -264,20 +229,22 @@ open class ChatViewModel @Inject constructor(
     }
 
     fun toggleDarkMode() {
-        val currentMode = darkMode.value
-        settingsRepo.updateDarkMode(!currentMode!!)
+        viewModelScope.launch {
+            service.toggleDarkMode()
+        }
     }
 
     fun saveUserId(userId: String) {
-        settingsRepo.updateUserId(userId)
+        service.saveUserId(userId)
     }
 
     fun goToGameRequestSenderChat() {
         viewModelScope.launch {
             snackBarTimer.cancel()
             closeSnackBar()
-            messagingRepoX.startGameRequestSenderChat()
+            service.startGameRequestSenderChat()
             navigateToChatFragment()
+            _navigateToChatFragment.value = false
         }
     }
 
@@ -292,27 +259,17 @@ open class ChatViewModel @Inject constructor(
     fun refreshUserStatus() {
         viewModelScope.launch {
             try {
-                messagingRepoX.refreshUser()
+                service.refreshUser()
             } catch (e: Exception) {
-                Log.e("viewModel", "error refreshing user status. $e")
+                Log.e("viewModel", "refreshUserStatus(). $e")
             }
         }
     }
 
-    fun updateChatFragmentShowing(newStatus: Boolean){
+    fun updateChatFragmentShowing(newStatus: Boolean) {
         chatFragmentShowing.value = newStatus
+        chatFragmentShowingX = newStatus
     }
-
-
-
-
-
-
-
-
-
-
-
 
     fun closeSnackBar() {
         _snackBarStateX.value = getNoSnackBarSnackBar()
@@ -321,77 +278,35 @@ open class ChatViewModel @Inject constructor(
     init {
         _showConfirmGameRequestDialog.value = false
         _navigateToChatFragment.value = false
-        _navigateToChatsFragment.value = false
         _snackBarStateX.value = getNoSnackBarSnackBar()
 
         viewModelScope.launch {
-            combine(messagingRepoX.newGameRequestFlow, chatFragmentShowing){newGameRequestData, chatFragmentShowing ->
-                if(newGameRequestData.first == null){
-                    return@combine getNoSnackBarSnackBar()
+            service.newGameRequestFlow.collect { newGameRequestData ->
+                if (newGameRequestData.first == null) {
+                    return@collect
                 }
 
-                if(!chatFragmentShowing){
+                if (!chatFragmentShowingX) {
                     snackBarTimer.cancel()
                     snackBarTimer.start()
-                    return@combine getPromptSnackBar(
+                    _snackBarStateX.value = getPromptSnackBar(
+                        "${newGameRequestData.second} has challenged you!",
+                        "Open chat"
+                    )
+                    return@collect
+                }
+
+                if (newGameRequestData.first == currentChatChatMateId) {
+                    _snackBarStateX.value = getNoSnackBarSnackBar()
+                } else {
+                    snackBarTimer.cancel()
+                    snackBarTimer.start()
+                    _snackBarStateX.value = getPromptSnackBar(
                         "${newGameRequestData.second} has challenged you!",
                         "Open chat"
                     )
                 }
-
-                return@combine if (newGameRequestData.third == currentChatChatMateId){
-                    getNoSnackBarSnackBar()
-                }
-                else{
-                    snackBarTimer.cancel()
-                    snackBarTimer.start()
-                    getPromptSnackBar(
-                        "${newGameRequestData.second} has challenged you!",
-                        "Open chat"
-                    )
-                }
-            }.collect {
-                _snackBarStateX.value = it
             }
         }
     }
-
-//    companion object {
-//
-//        val Factory: ViewModelProvider.AndroidViewModelFactory = object : ViewModelProvider.AndroidViewModelFactory() {
-//            @Suppress("UNCHECKED_CAST")
-//            override fun <T : ViewModel> create(
-//                modelClass: Class<T>,
-//                extras: CreationExtras
-//            ): T {
-//                // Get the Application object from extras
-//                val application = checkNotNull(extras[APPLICATION_KEY])
-//                // Create a SavedStateHandle for this ViewModel from extras
-//                val savedStateHandle = extras.createSavedStateHandle()
-//                val oziApp = application as OziApplication
-//
-//                return ChatViewModel(
-//                    oziApp.database.chatDao(),
-//                    SettingsRepo(oziApp),
-//                    MessagingRepoX(oziApp)
-//                ) as T
-//            }
-//        }
-//    }
 }
-
-//class ChatViewModelFactory(
-//    private val chatDao: ChatDao,
-//    private val settingsRepo: SettingsRepo,
-//    private val messagingRepoX: MessagingRepoX
-//) :
-//    ViewModelProvider.Factory {
-//    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-//        if (modelClass.isAssignableFrom(ChatViewModel::class.java)) {
-//            @Suppress("UNCHECKED_CAST")
-//            return ChatViewModel(chatDao, settingsRepo, messagingRepoX) as T
-//        }
-//        throw IllegalArgumentException("Unknown ViewModel class")
-//    }
-//
-//}

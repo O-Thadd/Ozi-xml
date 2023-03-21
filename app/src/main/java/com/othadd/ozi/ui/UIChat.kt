@@ -3,7 +3,7 @@ package com.othadd.ozi.ui
 import androidx.room.ColumnInfo
 import com.othadd.ozi.Message
 import com.othadd.ozi.UIMessage
-import com.othadd.ozi.database.DialogState
+import com.othadd.ozi.data.database.DialogState
 
 data class UIChat(
     val chatMateId: String,

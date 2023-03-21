@@ -14,9 +14,8 @@ import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
-import com.othadd.ozi.MessagingRepoX
 import com.othadd.ozi.OziApplication
-import com.othadd.ozi.database.ChatDao
+import com.othadd.ozi.data.database.ChatDao
 import com.othadd.ozi.databinding.FragmentFindUsersBinding
 import com.othadd.ozi.utils.SettingsRepo
 import dagger.hilt.android.AndroidEntryPoint

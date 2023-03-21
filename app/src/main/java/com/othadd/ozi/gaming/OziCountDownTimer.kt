@@ -3,9 +3,9 @@ package com.othadd.ozi.gaming
 import android.os.CountDownTimer
 import com.othadd.ozi.OziApplication
 import com.othadd.ozi.R
-import com.othadd.ozi.database.DialogState
-import com.othadd.ozi.database.getNotifyDialogType
-import com.othadd.ozi.database.getPromptDialogType
+import com.othadd.ozi.data.database.DialogState
+import com.othadd.ozi.data.database.getNotifyDialogType
+import com.othadd.ozi.data.database.getPromptDialogType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking

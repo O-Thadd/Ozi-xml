@@ -1,4 +1,4 @@
-package com.othadd.ozi.database
+package com.othadd.ozi.data.database
 
 import androidx.room.TypeConverter
 import com.google.gson.Gson

@@ -1,4 +1,4 @@
-package com.othadd.ozi.database
+package com.othadd.ozi.data.database
 
 import android.content.Context
 import androidx.room.Database

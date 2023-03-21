@@ -1,4 +1,4 @@
-package com.othadd.ozi.database
+package com.othadd.ozi.data.database
 
 const val NOTIFY_DIALOG_TYPE = "notify dialog type"
 const val PROMPT_DIALOG_TYPE = "prompt dialog type"
@@ -12,14 +12,14 @@ data class DialogState(
     val dialogType: String
 )
 
-fun getNotifyDialogType(message: String, showButton: Boolean): DialogState{
+fun getNotifyDialogType(message: String, showButton: Boolean): DialogState {
     return DialogState(message, "", "", showButton, NOTIFY_DIALOG_TYPE)
 }
 
-fun getPromptDialogType(message: String, positiveButtonText: String, negativeButtonText: String): DialogState{
+fun getPromptDialogType(message: String, positiveButtonText: String, negativeButtonText: String): DialogState {
     return DialogState(message, positiveButtonText, negativeButtonText, false, PROMPT_DIALOG_TYPE)
 }
 
-fun getNoDialogDialogType(): DialogState{
-    return DialogState( "", "","", false,NO_DIALOG_DIALOG_TYPE)
+fun getNoDialogDialogType(): DialogState {
+    return DialogState( "", "","", false, NO_DIALOG_DIALOG_TYPE)
 }

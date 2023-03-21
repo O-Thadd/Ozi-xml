@@ -1,4 +1,4 @@
-package com.othadd.ozi.network
+package com.othadd.ozi.data.network
 
 import com.othadd.ozi.NWMessage
 import com.squareup.moshi.Moshi
@@ -15,7 +15,7 @@ import retrofit2.http.Path
 private const val BASE_URL = "https://coastal-haven-309701.ew.r.appspot.com"
 
 //"https://coastal-haven-309701.ew.r.appspot.com"
-//"http://192.168.43.107:8080"
+//"http://192.168.43.161:8080"
 
 private val moshi = Moshi.Builder()
     .add(KotlinJsonAdapterFactory())

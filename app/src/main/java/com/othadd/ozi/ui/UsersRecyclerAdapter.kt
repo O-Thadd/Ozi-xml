@@ -8,9 +8,9 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.othadd.ozi.R
 import com.othadd.ozi.databinding.UsersListItemBinding
-import com.othadd.ozi.network.FEMALE
-import com.othadd.ozi.network.MALE
-import com.othadd.ozi.network.User
+import com.othadd.ozi.data.network.FEMALE
+import com.othadd.ozi.data.network.MALE
+import com.othadd.ozi.data.network.User
 
 class UsersRecyclerAdapter(private val onItemClick: (String) -> Unit) :
     ListAdapter<User, UsersRecyclerAdapter.UserViewHolder>(DiffCallback) {

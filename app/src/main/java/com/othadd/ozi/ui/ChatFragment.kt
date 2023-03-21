@@ -1,21 +1,18 @@
 package com.othadd.ozi.ui
 
-import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.app.Activity
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.OvershootInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.addCallback
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -25,19 +22,16 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
-import com.othadd.ozi.*
-import com.othadd.ozi.database.ChatDao
-import com.othadd.ozi.database.DialogState
-import com.othadd.ozi.database.NOTIFY_DIALOG_TYPE
-import com.othadd.ozi.database.PROMPT_DIALOG_TYPE
+import com.othadd.ozi.data.database.DialogState
+import com.othadd.ozi.data.database.NOTIFY_DIALOG_TYPE
+import com.othadd.ozi.data.database.PROMPT_DIALOG_TYPE
 import com.othadd.ozi.databinding.FragmentChatBinding
-import com.othadd.ozi.utils.SettingsRepo
-import com.othadd.ozi.utils.showNetworkErrorToast
+import com.othadd.ozi.utils.ARBITRARY_STRING
 import com.othadd.ozi.utils.showToast
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import java.util.Calendar
 
 
 @AndroidEntryPoint
@@ -56,10 +50,9 @@ class ChatFragment : Fragment() {
     private lateinit var newMessageGameModeEditText: EditText
     private lateinit var newMessageEditText: EditText
 
-    private var chatSwitchBySnackBar = false
-    private var chatFragmentWasClosed = true
     private lateinit var backPressedCallback: OnBackPressedCallback
-    private lateinit var chatMateUserId: String
+    private var chatMateUserId: String = ARBITRARY_STRING
+    private var chatUpdateTime = 0L
 
     private var gameModeKeyboardEnabled = false
 
@@ -110,10 +103,6 @@ class ChatFragment : Fragment() {
         sharedViewModel.resetChatStartedByActivity()
         sharedViewModel.refreshUserStatus()
 
-        if (chatFragmentWasClosed) {
-            chatFragmentWasClosed = false
-            scrollToRecyclerViewBottom()
-        }
     }
 
     override fun onPause() {
@@ -136,18 +125,18 @@ class ChatFragment : Fragment() {
         }
 
         sharedViewModel.chat.observe(viewLifecycleOwner) { chat ->
-            chatMateUserId = chat.chatMateId
-
             handleVerificationStatus(chat.verificationStatus)
 
             handleEmptyState(chat.messages.isEmpty())
 
             handleDialog(chat.dialogState)
+
+            val timeNow = Calendar.getInstance().timeInMillis
+            scrollToRecyclerViewBottomFor1stTimeChatOpen(chatMateUserId, chat.chatMateId, chatUpdateTime, timeNow)
+            chatMateUserId = chat.chatMateId
+            chatUpdateTime = timeNow
         }
 
-        sharedViewModel.markAllMessagesSent.observe(viewLifecycleOwner) {
-            if (it) sharedViewModel.markMessagesSent()
-        }
 
         sharedViewModel.shouldScrollChat.observe(viewLifecycleOwner) {
             if (it) { smoothScrollToRecyclerBottom() }
@@ -158,14 +147,6 @@ class ChatFragment : Fragment() {
             sharedViewModel.showConfirmGameRequestDialog,
             confirmSendGameRequestDialog
         )
-
-
-        sharedViewModel.navigateToChatsFragment.observe(viewLifecycleOwner) {
-            if (it && chatSwitchBySnackBar) {
-                chatSwitchBySnackBar = false
-                findNavController().popBackStack()
-            }
-        }
 
         sharedViewModel.shouldEnableGameModeKeyboard.observe(viewLifecycleOwner){
             if (it) enableGameModeKeyboard() else disableGameModeKeyboard()
@@ -248,12 +229,32 @@ class ChatFragment : Fragment() {
         }
     }
 
-    private fun scrollToRecyclerViewBottom() {
-        Handler(Looper.getMainLooper()).postDelayed({
-            val listSize = binding.messagesRecyclerView.layoutManager?.itemCount
-            if (listSize != null && listSize != 0)
-                binding.messagesRecyclerView.scrollToPosition(listSize - 1)
-        }, 50)
+    private fun scrollToRecyclerViewBottomFor1stTimeChatOpen(
+        oldId: String,
+        newId: String,
+        oldUpdateTime: Long,
+        newUpdateTime: Long
+    ) {
+        val listSize = binding.messagesRecyclerView.layoutManager?.itemCount ?: return
+        if (oldId != newId) {
+            binding.messagesRecyclerView.scrollToPosition(listSize - 1)
+            return
+        }
+
+        /*
+        the lambda within the observe() on a livedata is run multiple times in quick successions(not sure why).
+        call it weird runs.
+        the following time interval check is to distinguish weird runs from a run
+        that's due to an actual change in data such as for a new message.
+        the scroll to bottom is needed at the eventual end of the weird runs.
+        but not when data actually changes such as for a new message.
+        850millis seems a reasonable benchmark to distinguish the interval between weird runs and
+        a run due to actual data change. also, some experimentation was done.
+        */
+        val updateInterval = newUpdateTime - oldUpdateTime
+        if (updateInterval < 850L){
+            binding.messagesRecyclerView.scrollToPosition(listSize - 1)
+        }
     }
 
     private fun smoothScrollToRecyclerBottom() {
